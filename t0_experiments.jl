@@ -15,6 +15,8 @@ begin
     using .TrafficMatrix
     include(joinpath(@__DIR__, "source", "Scenario.jl"))
     using .Scenario
+    include(joinpath(@__DIR__, "source", "Model.jl"))
+    using .Model
 end
 
 # ╔═╡ b0000000-0000-4000-8000-000000000001
@@ -51,24 +53,44 @@ the demands `φ(d, t)` from the traffic matrix, and `maxSeg` from the scenario.
 """
 
 # ╔═╡ b0000000-0000-4000-8000-000000000007
-# c(a): capacity of every arc, read from the graph's edge data.
-capacities = get_capacities_by_graph(graph)
-
-# ╔═╡ b0000000-0000-4000-8000-000000000008
 begin
+    # c(a): capacity of every arc, read from the graph's edge data.
+    capacities = get_capacities_by_graph(graph)
+
+    # φ(d, t): demand volumes, from the traffic matrix.
     tm_file = joinpath(@__DIR__, "data", "setA-01-tm.json")
     tm = JSON3.read(read(tm_file, String))
-
+    is_tmData_valid(tm) ||
+        error("Invalid traffic-matrix JSON: $tm_file")
     demands = get_demands_from_json(tm, graph)
-end
 
-# ╔═╡ b0000000-0000-4000-8000-000000000009
-begin
+    # maxSeg: from the scenario.
     scenario_file = joinpath(@__DIR__, "data", "setA-01-scenario.json")
     scenario = JSON3.read(read(scenario_file, String))
-
+    is_scenarioData_valid(scenario) ||
+        error("Invalid scenario JSON: $scenario_file")
     maxSeg = get_maxSegments_from_json(scenario)
 end
+
+# ╔═╡ b0000000-0000-4000-8000-000000000008
+md"""
+# Step 4 — Period-0 model (MLU minimization)
+
+Build and solve the MILP for time period 0: pick a segment path for every demand
+so the maximum link utilization `λ` (MLU) is minimized, subject to flow
+conservation, the `maxSeg` cap, and the per-arc load constraint.
+"""
+
+# ╔═╡ b0000000-0000-4000-8000-000000000009
+solution = get_solution_by_graph(graph, r, demands, capacities, maxSeg)
+
+# ╔═╡ b0000000-0000-4000-8000-00000000000a
+(
+    status  = solution.status,
+    mlu     = solution.mlu,
+    gap     = solution.gap,
+    cpuTime = solution.cpuTime,
+)
 
 # ╔═╡ Cell order:
 # ╟─b0000000-0000-4000-8000-000000000001
@@ -78,5 +100,6 @@ end
 # ╠═b0000000-0000-4000-8000-000000000005
 # ╟─b0000000-0000-4000-8000-000000000006
 # ╠═b0000000-0000-4000-8000-000000000007
-# ╠═b0000000-0000-4000-8000-000000000008
+# ╟─b0000000-0000-4000-8000-000000000008
 # ╠═b0000000-0000-4000-8000-000000000009
+# ╠═b0000000-0000-4000-8000-00000000000a

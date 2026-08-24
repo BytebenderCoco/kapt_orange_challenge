@@ -100,6 +100,9 @@ Symbols currently in use:
 | `i`, `j` | source / target nodes |
 | `u`, `v` | arc endpoints, arc `a = (u,v)` |
 | `n`      | node count |
+| `x`      | `x^{dt}_{ij}` — segment decision variable |
+| `lambda` | `λ` — max link utilization (MLU), the objective |
+| `mlu`    | `λ*` — the optimized MLU value returned by the solve |
 
 ### Tier 2 — everything else → descriptive `camelCase`
 
