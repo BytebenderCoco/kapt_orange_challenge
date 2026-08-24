@@ -2,20 +2,21 @@ module Graph
 
 using Graphs
 
-export NetworkGraph, get_graph_from_json, check_json_data, get_edgeData_by_graph
+export NetworkGraph, get_graph_from_json, is_jsonData_valid, get_edgeData_by_graph,
+    get_capacities_by_graph, get_vertex_by_jsonId
 
 struct NetworkGraph{G<:AbstractGraph}
     graph::G
 
     # One entry per Julia vertex.
-    # node_data[v] = (json_id = ..., name = ...)
-    node_data::Vector{NamedTuple{(:json_id, :name), Tuple{Int, String}}}
+    # nodeData[v] = (jsonId = ..., name = ...)
+    nodeData::Vector{NamedTuple{(:jsonId, :name), Tuple{Int, String}}}
 
     # Translation from JSON node id to Graphs.jl vertex number.
-    json_to_vertex::Dict{Int, Int}
+    jsonToVertex::Dict{Int, Int}
 
     # Edge attributes indexed by Julia endpoints (u,v).
-    edge_data::Dict{
+    edgeData::Dict{
         Tuple{Int, Int},
         NamedTuple{(:id, :metric, :capacity), Tuple{Int, Float64, Float64}}
     }
@@ -28,97 +29,125 @@ function get_graph_from_json(data)
     n = length(data.nodes)
 
     # Map JSON ids to Julia vertices 1,...,n.
-    json_to_vertex = Dict{Int, Int}()
-    node_data = Vector{
-        NamedTuple{(:json_id, :name), Tuple{Int, String}}
+    jsonToVertex = Dict{Int, Int}()
+    nodeData = Vector{
+        NamedTuple{(:jsonId, :name), Tuple{Int, String}}
     }(undef, n)
 
     for (v, node) in enumerate(data.nodes)
         id = Int(node.id)
-        json_to_vertex[id] = v
-        node_data[v] = (
-            json_id = id,
+        jsonToVertex[id] = v
+        nodeData[v] = (
+            jsonId = id,
             name = String(node.name),
         )
     end
 
     # Directed or undirected graph according to the JSON field.
-    g = Bool(data.directed) ? SimpleDiGraph(n) : SimpleGraph(n)
+    graph = Bool(data.directed) ? SimpleDiGraph(n) : SimpleGraph(n)
 
-    edge_data = Dict{
+    edgeData = Dict{
         Tuple{Int, Int},
         NamedTuple{(:id, :metric, :capacity), Tuple{Int, Float64, Float64}}
     }()
 
     for link in data.links
-        u = json_to_vertex[Int(link.from)]
-        v = json_to_vertex[Int(link.to)]
+        u = jsonToVertex[Int(link.from)]
+        v = jsonToVertex[Int(link.to)]
 
         key = Bool(data.directed) ? (u, v) : minmax(u, v)
 
-        add_edge!(g, u, v)
+        add_edge!(graph, u, v)
 
-        edge_data[key] = (
+        edgeData[key] = (
             id       = Int(link.id),
             metric   = Float64(link.metric),
             capacity = Float64(link.capacity),
         )
     end
 
-    return NetworkGraph(g, node_data, json_to_vertex, edge_data)
+    return NetworkGraph(graph, nodeData, jsonToVertex, edgeData)
 end
 
-# Validate already-parsed JSON network data. Throws an error describing the
-# first problem found; returns `nothing` if the data is well-formed for
-# get_graph_from_json.
-function check_json_data(data)
-    hasproperty(data, :directed) ||
-        error("Missing JSON field: directed")
-    hasproperty(data, :multigraph) ||
-        error("Missing JSON field: multigraph")
-    hasproperty(data, :nodes) ||
-        error("Missing JSON field: nodes")
-    hasproperty(data, :links) ||
-        error("Missing JSON field: links")
+# Return `true` if already-parsed JSON network data is well-formed for
+# get_graph_from_json, `false` otherwise. A `@warn` describes the first problem
+# found so failures stay diagnosable.
+function is_jsonData_valid(data)
+    for field in (:directed, :multigraph, :nodes, :links)
+        if !hasproperty(data, field)
+            @warn "Missing JSON field: $field"
+            return false
+        end
+    end
 
-    Bool(data.multigraph) &&
-        error("This notebook uses SimpleGraph/SimpleDiGraph and therefore does not support multigraph=true.")
+    if Bool(data.multigraph)
+        @warn "multigraph=true is not supported (uses SimpleGraph/SimpleDiGraph)."
+        return false
+    end
 
     # Collect node ids, checking for duplicates.
     ids = Set{Int}()
     for node in data.nodes
         id = Int(node.id)
-        (id in ids) &&
-            error("Duplicate node id in JSON: $id")
+        if id in ids
+            @warn "Duplicate node id in JSON: $id"
+            return false
+        end
         push!(ids, id)
     end
 
     # Check links: endpoints must be known nodes, no repeated endpoint pair.
     seen = Set{Tuple{Int, Int}}()
     for link in data.links
-        from_id = Int(link.from)
-        to_id   = Int(link.to)
+        fromId = Int(link.from)
+        toId   = Int(link.to)
 
-        (from_id in ids) ||
-            error("Unknown node id in link: $from_id")
-        (to_id in ids) ||
-            error("Unknown node id in link: $to_id")
+        if !(fromId in ids)
+            @warn "Unknown node id in link: $fromId"
+            return false
+        end
+        if !(toId in ids)
+            @warn "Unknown node id in link: $toId"
+            return false
+        end
 
-        key = Bool(data.directed) ? (from_id, to_id) : minmax(from_id, to_id)
-        (key in seen) &&
-            error("Multiple links between the same endpoints are not supported when multigraph=false.")
+        key = Bool(data.directed) ? (fromId, toId) : minmax(fromId, toId)
+        if key in seen
+            @warn "Multiple links between the same endpoints are not supported when multigraph=false."
+            return false
+        end
         push!(seen, key)
     end
 
-    return nothing
+    return true
 end
 
 # Look up an arc's stored attributes (id, metric, capacity) by its endpoints.
 # The key convention must match how get_graph_from_json stored the edge:
 # (u,v) for directed graphs, minmax(u,v) for undirected.
-function get_edgeData_by_graph(net::NetworkGraph, u::Integer, v::Integer)
-    key = is_directed(net.graph) ? (Int(u), Int(v)) : minmax(Int(u), Int(v))
-    return net.edge_data[key]
+function get_edgeData_by_graph(network::NetworkGraph, u::Integer, v::Integer)
+    key = is_directed(network.graph) ? (Int(u), Int(v)) : minmax(Int(u), Int(v))
+    return network.edgeData[key]
+end
+
+# Translate a JSON node id to its Julia vertex number (inverse of the
+# nodeData[v].jsonId mapping recorded by get_graph_from_json).
+function get_vertex_by_jsonId(network::NetworkGraph, id::Integer)
+    return network.jsonToVertex[Int(id)]
+end
+
+# Arc capacities c(a): a map from each arc (keyed by its endpoints, same
+# convention as get_edgeData_by_graph) to the capacity stored in edgeData.
+function get_capacities_by_graph(network::NetworkGraph)
+    graph = network.graph
+    # c(a): capacity of arc a = (u, v)
+    capacities = Dict{Tuple{Int, Int}, Float64}()
+    for edge in edges(graph)
+        u, v = src(edge), dst(edge)
+        key = is_directed(graph) ? (Int(u), Int(v)) : minmax(Int(u), Int(v))
+        capacities[key] = get_edgeData_by_graph(network, u, v).capacity
+    end
+    return capacities
 end
 
 end # module Graph
