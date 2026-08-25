@@ -1,0 +1,41 @@
+{
+    "version": "1.0.0",
+    "instance": "02",
+    "succeeded": true,
+    "results": {
+        "vertices": 30,
+        "links": 150,
+        "demands": 45,
+        "status": "OPTIMAL",
+        "mlu": 0.5485780439121877,
+        "gap": 2.1649348980190553e-14,
+        "cpuTime": 11.08274793624878
+    },
+    "events": [
+        {
+            "time": "2026-08-25T12-40-46",
+            "level": "info",
+            "message": "loading instance data"
+        },
+        {
+            "time": "2026-08-25T12-40-46",
+            "level": "info",
+            "message": "graph calculated"
+        },
+        {
+            "time": "2026-08-25T12-40-46",
+            "level": "info",
+            "message": "parameters built"
+        },
+        {
+            "time": "2026-08-25T12-40-46",
+            "level": "info",
+            "message": "building and solving model"
+        },
+        {
+            "time": "2026-08-25T12-40-58",
+            "level": "info",
+            "message": "model solved"
+        }
+    ]
+}

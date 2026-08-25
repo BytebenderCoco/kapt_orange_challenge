@@ -11,6 +11,7 @@ begin
     using Graphs
     using JuMP
     using HiGHS
+    using ProgressLogging
     include(joinpath(@__DIR__, "source", "Graph.jl"))
     using .Graph
     include(joinpath(@__DIR__, "source", "SplitCoefficients.jl"))
@@ -127,16 +128,26 @@ get_instanceNames_from_dir(dataDir) =
     sort([replace(f, "-net.json" => "")
           for f in readdir(dataDir) if endswith(f, "-net.json")])
 
+# ╔═╡ b0000000-0000-4000-8000-000000000019
+# Append one timestamped event to an instance's log (info by default, :error on failure).
+record_event!(events, message; level = :info) =
+    push!(events, (time = Dates.format(now(), "yyyy-mm-ddTHH-MM-SS"), level, message))
+
 # ╔═╡ b0000000-0000-4000-8000-000000000013
-# One result row for a single instance: run the whole period-0 pipeline and return
-# its graph metadata plus the solve outcome.
-function get_experimentRow_from_instance(dataDir, instanceName; timeLimitSec = 900)
+# One result row for a single instance: run the whole period-0 pipeline and return its
+# graph metadata plus the solve outcome, recording each pipeline step into `events`.
+function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 900)
+    record_event!(events, "loading instance data")
     graph      = get_graph_from_instance(dataDir, instanceName)
+    record_event!(events, "graph calculated")
     r          = get_splitCoefficients_by_graph(graph)
     capacities = get_capacities_by_graph(graph)
     demands    = get_demands_from_instance(dataDir, instanceName, graph)
     maxSeg     = get_maxSegments_from_instance(dataDir, instanceName)
+    record_event!(events, "parameters built")
+    record_event!(events, "building and solving model")
     solution   = get_solution_by_graph(graph, r, demands, capacities, maxSeg; timeLimitSec)
+    record_event!(events, "model solved")
     return (
         instance = instanceName,
         vertices = nv(graph.graph),
@@ -149,51 +160,37 @@ function get_experimentRow_from_instance(dataDir, instanceName; timeLimitSec = 9
     )
 end
 
-# ╔═╡ b0000000-0000-4000-8000-000000000014
-results = [
-    try
-        get_experimentRow_from_instance(dataDir, instanceName)
-    catch err
-        # Keep one bad instance from aborting the whole sweep: log it and emit a
-        # same-schema row so `results` stays a clean table (missing metrics,
-        # status = :error as the sentinel).
-        @warn "Experiment failed for instance" instanceName exception = (err, catch_backtrace())
-        (
-            instance = instanceName,
-            vertices = missing,
-            links    = missing,
-            demands  = missing,
-            status   = :error,
-            mlu      = missing,
-            gap      = missing,
-            cpuTime  = missing,
-        )
-    end
-    for instanceName in get_instanceNames_from_dir(dataDir)
-]
-
 # ╔═╡ b0000000-0000-4000-8000-000000000015
 md"""
 ## Persist the results
 
-Write the experiment table to `t0_results/<timestamp>.json` — one entry per
-instance with its name, whether the run succeeded, and the solve metrics. This is
-the write-side mirror of the `get_*_from_instance` readers.
+The sweep writes each instance to `t0_results/<timestamp>/<index>.json` **as it
+finishes**, not in one final batch — so cancelling the notebook keeps every instance
+that already completed. Each file holds the instance's index, whether the run
+succeeded, the solve metrics, and an `events` log recording each pipeline step (and
+any failure). This is the write-side mirror of the `get_*_from_instance` readers.
 """
 
 # ╔═╡ b0000000-0000-4000-8000-000000000016
 t0ResultsDir = joinpath(@__DIR__, "t0_results")
 
 # ╔═╡ b0000000-0000-4000-8000-000000000017
-# Persist the Step 5 results table to t0_results/<timestamp>.json. Each entry keeps
-# the instance name, a `succeeded` flag (false for the rows the try/catch turned
-# into :error), and the solve metrics. JSON has no Inf and no native enum, so a
-# non-finite mlu is written as null and the solver status as its name string.
-function save_results_to_json(results, t0ResultsDir)
-    mkpath(t0ResultsDir)
-    doc = [
-        (
-            instance  = row.instance,
+begin
+    # "01" from "setA-01": the instance's index within its set (the trailing -NN, no dash).
+    get_index_by_instanceName(instanceName) = replace(instanceName, r"^.*-" => "")
+    
+    # Persist one experiment row to t0_results/<timestamp>/<index>.json. The file carries a
+    # schema `version`, the instance `index`, a `succeeded` flag (false for the rows the
+    # try/catch turned into :error), the solve metrics, and the `events` log (each a
+    # time/level/message record of a pipeline step, or the failure). Writing per row as the
+    # sweep goes (not one final batch) means a cancelled run keeps every instance already
+    # finished. JSON has no Inf and no native enum, so a non-finite mlu is written as null
+    # and the solver status as its name string.
+    function save_experimentRow_to_json(row, runDir, events)
+        index = get_index_by_instanceName(row.instance)
+        doc = (
+            version   = "1.0.0",
+            instance  = index,
             succeeded = row.status !== :error,
             results   = (
                 vertices = row.vertices,
@@ -204,19 +201,42 @@ function save_results_to_json(results, t0ResultsDir)
                 gap      = row.gap,
                 cpuTime  = row.cpuTime,
             ),
+            events    = events,
         )
-        for row in results
-    ]
-    timestamp = Dates.format(now(), "yyyy-mm-ddTHH-MM")
-    filepath  = joinpath(t0ResultsDir, "$timestamp.json")
-    open(filepath, "w") do io
-        JSON3.pretty(io, JSON3.write(doc))
+        open(joinpath(runDir, "$index.json"), "w") do io
+            JSON3.pretty(io, JSON3.write(doc))
+        end
     end
-    return filepath
 end
 
-# ╔═╡ b0000000-0000-4000-8000-000000000018
-save_results_to_json(results, t0ResultsDir)
+# ╔═╡ b0000000-0000-4000-8000-000000000014
+let
+    # One run directory per sweep; each instance's file lands here the moment it finishes,
+    # so cancelling the notebook keeps whatever already completed.
+    timestamp = Dates.format(now(), "yyyy-mm-ddTHH-MM")
+    runDir    = joinpath(t0ResultsDir, timestamp)
+    mkpath(runDir)
+    @progress for instanceName in get_instanceNames_from_dir(dataDir)
+        events = NamedTuple[]
+        row = try
+            get_experimentRow_from_instance(dataDir, instanceName, events)
+        catch err
+            # Keep one bad instance from aborting the whole sweep: record the failure, log
+            # it, and emit a same-schema row so the saved file stays on-schema (missing
+            # metrics, status = :error as the sentinel).
+            record_event!(events, sprint(showerror, err); level = :error)
+            @warn "Experiment failed for instance" instanceName exception = (err, catch_backtrace())
+            (
+                instance = instanceName,
+                vertices = missing, links = missing, demands = missing,
+                status   = :error,
+                mlu = missing, gap = missing, cpuTime = missing,
+            )
+        end
+        save_experimentRow_to_json(row, runDir, events)
+    end
+    runDir
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -226,12 +246,14 @@ Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+ProgressLogging = "33c8b6b6-d38a-422a-b730-caa89a2f386c"
 
 [compat]
 Graphs = "~1.14.0"
 HiGHS = "~1.24.1"
 JSON3 = "~1.14.3"
 JuMP = "~1.31.2"
+ProgressLogging = "~0.1.6"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -240,7 +262,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "87fa5e18937064a3af2c8cf2c6b33e19655aaa9c"
+project_hash = "1bb48eebd1ff683a93250de9fac39ac3887bd126"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -535,6 +557,12 @@ deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 version = "1.11.0"
 
+[[deps.ProgressLogging]]
+deps = ["Logging", "SHA", "UUIDs"]
+git-tree-sha1 = "f0803bc1171e455a04124affa9c21bba5ac4db32"
+uuid = "33c8b6b6-d38a-422a-b730-caa89a2f386c"
+version = "0.1.6"
+
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -685,11 +713,11 @@ version = "5.15.0+0"
 # ╠═b0000000-0000-4000-8000-00000000000a
 # ╟─b0000000-0000-4000-8000-000000000011
 # ╠═b0000000-0000-4000-8000-000000000012
+# ╠═b0000000-0000-4000-8000-000000000019
 # ╠═b0000000-0000-4000-8000-000000000013
-# ╠═b0000000-0000-4000-8000-000000000014
 # ╟─b0000000-0000-4000-8000-000000000015
 # ╠═b0000000-0000-4000-8000-000000000016
 # ╠═b0000000-0000-4000-8000-000000000017
-# ╠═b0000000-0000-4000-8000-000000000018
+# ╠═b0000000-0000-4000-8000-000000000014
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
