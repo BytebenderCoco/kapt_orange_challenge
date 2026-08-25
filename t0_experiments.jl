@@ -102,7 +102,20 @@ conservation, the `maxSeg` cap, and the per-arc load constraint.
 """
 
 # ╔═╡ b0000000-0000-4000-8000-000000000009
-solution = get_solution_by_graph(graph, r, demands, capacities, maxSeg; timeLimitSec = 900)
+begin
+    # Assemble the period-0 model with the fluent builder, then hand the caller a
+    # solvable AsrModel — nothing is solved until `solve!` below.
+    n = nv(graph.graph)
+    builder = AsrModelBuilder(; timeLimitSec = 900)
+    set_variables!(builder, demands, n)
+    set_flowConservation!(builder, demands, n)
+    set_segmentCap!(builder, demands, n, maxSeg)
+    set_loadBounds!(builder, graph, r, demands, capacities)
+    model = build(builder)
+end
+
+# ╔═╡ b0000000-0000-4000-8000-00000000001a
+solution = solve!(model)
 
 # ╔═╡ b0000000-0000-4000-8000-00000000000a
 (
@@ -145,18 +158,31 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     demands    = get_demands_from_instance(dataDir, instanceName, graph)
     maxSeg     = get_maxSegments_from_instance(dataDir, instanceName)
     record_event!(events, "parameters built")
-    record_event!(events, "building and solving model")
-    solution   = get_solution_by_graph(graph, r, demands, capacities, maxSeg; timeLimitSec)
+    record_event!(events, "building model")
+    n          = nv(graph.graph)
+    builder    = AsrModelBuilder(; timeLimitSec)
+    set_variables!(builder, demands, n)
+    set_flowConservation!(builder, demands, n)
+    set_segmentCap!(builder, demands, n, maxSeg)
+    set_loadBounds!(builder, graph, r, demands, capacities)
+    model      = build(builder)
+    record_event!(events, "solving model")
+    solution   = solve!(model)
     record_event!(events, "model solved")
+    # Decode the routing scheme: per-demand waypoint lists (JSON node ids). Empty
+    # for a demand routed on shortest paths, or for the whole run if infeasible.
+    waypoints  = get_waypoints_by_solvedModel(model, graph, demands)
+    record_event!(events, "waypoints decoded")
     return (
-        instance = instanceName,
-        vertices = nv(graph.graph),
-        links    = ne(graph.graph),
-        demands  = length(demands),
-        status   = solution.status,
-        mlu      = solution.mlu,
-        gap      = solution.gap,
-        cpuTime  = solution.cpuTime,
+        instance  = instanceName,
+        vertices  = nv(graph.graph),
+        links     = ne(graph.graph),
+        demands   = length(demands),
+        status    = solution.status,
+        mlu       = solution.mlu,
+        gap       = solution.gap,
+        cpuTime   = solution.cpuTime,
+        waypoints = waypoints,
     )
 end
 
@@ -181,25 +207,29 @@ begin
     
     # Persist one experiment row to t0_results/<timestamp>/<index>.json. The file carries a
     # schema `version`, the instance `index`, a `succeeded` flag (false for the rows the
-    # try/catch turned into :error), the solve metrics, and the `events` log (each a
-    # time/level/message record of a pipeline step, or the failure). Writing per row as the
+    # try/catch turned into :error), the solve metrics, the per-demand routing `waypoints`,
+    # and the `events` log (each a time/level/message record of a pipeline step, or the
+    # failure). Writing per row as the
     # sweep goes (not one final batch) means a cancelled run keeps every instance already
     # finished. JSON has no Inf and no native enum, so a non-finite mlu is written as null
     # and the solver status as its name string.
     function save_experimentRow_to_json(row, runDir, events)
         index = get_index_by_instanceName(row.instance)
         doc = (
-            version   = "1.0.0",
+            version   = "1.1.0",
             instance  = index,
             succeeded = row.status !== :error,
             results   = (
-                vertices = row.vertices,
-                links    = row.links,
-                demands  = row.demands,
-                status   = string(row.status),
-                mlu      = (row.mlu === missing || isfinite(row.mlu)) ? row.mlu : nothing,
-                gap      = row.gap,
-                cpuTime  = row.cpuTime,
+                vertices  = row.vertices,
+                links     = row.links,
+                demands   = row.demands,
+                status    = string(row.status),
+                mlu       = (row.mlu === missing || isfinite(row.mlu)) ? row.mlu : nothing,
+                gap       = row.gap,
+                cpuTime   = row.cpuTime,
+                # Per-demand waypoint lists (JSON node ids); [] = shortest-path
+                # routing, null for a failed run. Not yet the srpaths.json format.
+                waypoints = row.waypoints,
             ),
             events    = events,
         )
@@ -231,6 +261,7 @@ let
                 vertices = missing, links = missing, demands = missing,
                 status   = :error,
                 mlu = missing, gap = missing, cpuTime = missing,
+                waypoints = missing,
             )
         end
         save_experimentRow_to_json(row, runDir, events)
@@ -710,6 +741,7 @@ version = "5.15.0+0"
 # ╠═b0000000-0000-4000-8000-000000000010
 # ╟─b0000000-0000-4000-8000-000000000008
 # ╠═b0000000-0000-4000-8000-000000000009
+# ╠═b0000000-0000-4000-8000-00000000001a
 # ╠═b0000000-0000-4000-8000-00000000000a
 # ╟─b0000000-0000-4000-8000-000000000011
 # ╠═b0000000-0000-4000-8000-000000000012
