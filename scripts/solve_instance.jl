@@ -34,7 +34,7 @@ using .Model
 
 # Parse the CLI arguments into (instanceName, resultsDir, dataDir, timeLimitSec).
 function parse_args(args)
-    resultsDir   = joinpath(REPO_ROOT, "results")
+    resultsDir   = joinpath(REPO_ROOT, "t0_results")
     dataDir      = joinpath(REPO_ROOT, "data")
     timeLimitSec = 900
     positional   = String[]
@@ -148,11 +148,14 @@ function to_jsonable(row)
     )
 end
 
-# Write one instance's result to <resultsDir>/<instanceName>.json atomically
-# (temp file + rename) so a reader never sees a half-written result.
+# Write one instance's result to <resultsDir>/<index>.json atomically (temp file
+# + rename) so a reader never sees a half-written result. The index is the
+# instance's numeric id (e.g. "setA-05" -> "05"), matching the notebook's
+# t0_results/<timestamp>/NN.json naming.
 function save_result_to_json(row, resultsDir)
+    index = replace(row.instance, r"^.*-" => "")
     mkpath(resultsDir)
-    outPath = joinpath(resultsDir, "$(row.instance).json")
+    outPath = joinpath(resultsDir, "$(index).json")
     tmpPath = "$outPath.tmp"
     open(tmpPath, "w") do io
         JSON3.pretty(io, JSON3.write(to_jsonable(row)))

@@ -2,8 +2,9 @@
 # Run the t0 experiments for every setA instance in parallel, one Julia process
 # per instance, with a bounded number of concurrent solves.
 #
-# Results and logs land in runs/<RUN_ID>/{results,logs}, keyed by a run id that
-# defaults to the current local server time (YYYYMMDD-HHMMSS).
+# Results land in t0_results/<RUN_ID>/ (one NN.json per instance + summary.csv),
+# keyed by a run id that defaults to the current local server time
+# (YYYYMMDD-HHMMSS). Logs are discarded.
 #
 # Env overrides:
 #   RUN_ID     run id (default: local time stamp)
@@ -16,9 +17,7 @@ set -u
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 JULIA="${JULIA:-julia}"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
-RUN_DIR="$REPO_ROOT/runs/$RUN_ID"
-RESULTS_DIR="$RUN_DIR/results"
-LOGS_DIR="$RUN_DIR/logs"
+RESULTS_DIR="$REPO_ROOT/t0_results/$RUN_ID"
 DATA_DIR="${DATA_DIR:-$REPO_ROOT/data}"
 TIME_LIMIT="${TIME_LIMIT:-900}"
 
@@ -42,7 +41,7 @@ if [ "${MAX_PROCS:-}" = "" ]; then
     fi
 fi
 
-mkdir -p "$RESULTS_DIR" "$LOGS_DIR"
+mkdir -p "$RESULTS_DIR"
 echo "runId=$RUN_ID cores=$CORES maxProcs=$MAX_PROCS timeLimit=${TIME_LIMIT}s"
 echo "resultsDir=$RESULTS_DIR"
 
@@ -67,13 +66,12 @@ if [ "${#instances[@]}" -eq 0 ]; then
 fi
 echo "==> running ${#instances[@]} instances (${instances[*]})"
 
-# One Julia process per instance, logging to its own file so parallel output
-# never interleaves.
+# One Julia process per instance; output is discarded (logs are not kept).
 run_instance() {
     local name="$1"
     "$JULIA" --project="$REPO_ROOT" "$REPO_ROOT/scripts/solve_instance.jl" \
         "$name" --output "$RESULTS_DIR" --data-dir "$DATA_DIR" --time-limit "$TIME_LIMIT" \
-        > "$LOGS_DIR/$name.log" 2>&1
+        > /dev/null 2>&1
 }
 
 # Bounded job pool (bash-3.2 safe: waves of MAX_PROCS). Track each job's exit

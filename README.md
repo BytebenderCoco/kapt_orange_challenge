@@ -65,16 +65,14 @@ println(sol)
 The `scripts/` folder runs the experiments without Pluto, in the background, and
 extracts results incrementally so you can pull them as each instance finishes.
 
-Results and logs land in `runs/<runId>/`, keyed by a run id (the local server
-time, e.g. `20260825-134512`), and are committed so contributors can see them:
+Results land in `t0_results/<runId>/`, keyed by a run id (the local server time,
+e.g. `20260825-134512`), and are committed so contributors can see them. Logs are
+discarded (only one detached-run log is kept under the gitignored `logs/`).
 
 ```
-runs/<runId>/
-  results/setA-01.json … setA-20.json   # one JSON per instance, written as it finishes
-  results/summary.csv                   # aggregate table (from collect_results.jl)
-  logs/run.log                          # master log
-  logs/run.pid                          # PID of the detached launcher
-  logs/setA-01.log …                    # per-instance log
+t0_results/<runId>/
+  01.json … 20.json    # one result per instance, written as it finishes
+  summary.csv          # aggregate table (from collect_results.jl)
 ```
 
 ### One-time setup on the server
@@ -98,11 +96,11 @@ parallel (bounded by `MAX_PROCS`, default `min(8, detected cores)`).
 ### Monitor and pull results incrementally
 
 ```bash
-tail -f runs/<runId>/logs/run.log                    # live progress
-ls runs/<runId>/results/*.json | wc -l               # finished instances (20 = done)
+tail -f logs/<runId>/run.log                          # live progress (gitignored)
+ls t0_results/<runId>/*.json | wc -l                  # finished instances (20 = done)
 
 # from your local machine, sync results as they land:
-rsync -avz user@host:/path/to/kapt_orange_challenge/runs/ ./runs/
+rsync -avz user@host:/path/to/kapt_orange_challenge/t0_results/ ./t0_results/
 ```
 
 ### Build the aggregate table (Step-5 table)
@@ -111,7 +109,7 @@ rsync -avz user@host:/path/to/kapt_orange_challenge/runs/ ./runs/
 julia --project=. scripts/collect_results.jl [runId]   # runId optional (latest by default)
 ```
 
-writes `runs/<runId>/results/summary.csv`.
+writes `t0_results/<runId>/summary.csv`.
 
 ### Scripts
 
@@ -126,6 +124,6 @@ writes `runs/<runId>/results/summary.csv`.
   Scenario, Model).
 - `data/` — the `setA` instances (`-net.json`, `-tm.json`, `-scenario.json`).
 - `scripts/` — headless runner + parallel/launcher/aggregation scripts.
-- `runs/` — per-run results and logs (committed).
+- `t0_results/` — per-run results (committed); `logs/` is gitignored.
 - `t0_experiments.jl` — the Pluto notebook implementing steps 1–5.
 - `project/` — challenge subject, notes, and the original instance data.

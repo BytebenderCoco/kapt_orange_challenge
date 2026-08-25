@@ -3,5 +3,8 @@
 *.swp
 *~
 
-# Transient process files (results and logs under runs/ stay visible and committed)
+# Transient process files
 *.pid
+
+# Detached-run logs (results under t0_results/ stay visible and committed)
+logs/

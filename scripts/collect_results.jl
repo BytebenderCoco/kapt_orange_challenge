@@ -5,8 +5,8 @@
 # Usage:
 #   julia --project=. scripts/collect_results.jl [runId]
 #
-# Without a runId it picks the most recent directory under runs/ (run ids are
-# local-server-time stamps, so lexical order == chronological order).
+# Without a runId it picks the most recent directory under t0_results/ (run ids
+# are local-server-time stamps, so lexical order == chronological order).
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, ".."))
 
@@ -15,14 +15,14 @@ Pkg.activate(REPO_ROOT; io = devnull)
 
 using JSON3
 
-# The most recent run id under runs/, or `nothing` if there are none.
-function get_latest_runId(runsDir)
-    isdir(runsDir) || return nothing
-    ids = sort([d for d in readdir(runsDir) if isdir(joinpath(runsDir, d))])
+# The most recent run id under t0_results/, or `nothing` if there are none.
+function get_latest_runId(t0ResultsDir)
+    isdir(t0ResultsDir) || return nothing
+    ids = sort([d for d in readdir(t0ResultsDir) if isdir(joinpath(t0ResultsDir, d))])
     return isempty(ids) ? nothing : ids[end]
 end
 
-# Load all result JSONs in a run's results/ directory, sorted by instance name.
+# Load all result JSONs in a run's directory, sorted by file name (NN.json).
 function get_rows_from_run(resultsDir)
     isdir(resultsDir) || error("No results directory: $resultsDir")
     files = sort([f for f in readdir(resultsDir) if endswith(f, ".json")])
@@ -53,10 +53,10 @@ function save_summary_csv(rows, outPath)
 end
 
 function main()
-    runId = isempty(ARGS) ? get_latest_runId(joinpath(REPO_ROOT, "runs")) : ARGS[1]
-    runId === nothing && error("No runs found under runs/. Run run_parallel.sh first.")
+    runId = isempty(ARGS) ? get_latest_runId(joinpath(REPO_ROOT, "t0_results")) : ARGS[1]
+    runId === nothing && error("No runs found under t0_results/. Run run_parallel.sh first.")
 
-    resultsDir = joinpath(REPO_ROOT, "runs", runId, "results")
+    resultsDir = joinpath(REPO_ROOT, "t0_results", runId)
     outPath    = joinpath(resultsDir, "summary.csv")
 
     rows = get_rows_from_run(resultsDir)

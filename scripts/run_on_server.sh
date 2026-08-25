@@ -12,8 +12,10 @@ set -u
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
-RUN_DIR="$REPO_ROOT/runs/$RUN_ID"
-LOGS_DIR="$RUN_DIR/logs"
+RESULTS_DIR="$REPO_ROOT/t0_results/$RUN_ID"
+# Single detached-run log, kept out of git (see .gitignore); per-instance logs
+# are discarded by run_parallel.sh.
+LOGS_DIR="$REPO_ROOT/logs/$RUN_ID"
 
 # Locate julia: prefer the one on PATH, fall back to a juliaup install at
 # ~/.juliaup/bin/julia (common on servers where juliaup only edited .profile).
@@ -44,5 +46,4 @@ else
     echo "monitor: tail -f $RUN_LOG"
 fi
 
-echo "results: $RUN_DIR/results"
-echo "per-instance logs: $LOGS_DIR/<instance>.log"
+echo "results: $RESULTS_DIR"
