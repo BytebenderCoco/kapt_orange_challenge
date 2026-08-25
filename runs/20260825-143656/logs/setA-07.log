@@ -1,0 +1,68 @@
+
+[3979633] signal 15: Terminated
+in expression starting at /data/home/wac35960/gp_orange_challenge/scripts/solve_instance.jl:179
+unknown function (ip: 0x7060848910d5) at /lib/x86_64-linux-gnu/libc.so.6
+pthread_cond_wait at /lib/x86_64-linux-gnu/libc.so.6 (unknown line)
+uv_cond_wait at /workspace/srcdir/libuv/src/unix/thread.c:822
+ijl_task_get_next at /cache/build/builder-amdci5-2/julialang/julia-ci/src/scheduler.c:523
+poptask at ./task.jl:1216
+wait at ./task.jl:1228
+#wait#406 at ./condition.jl:141
+wait at ./condition.jl:136 [inlined]
+_trywait at ./asyncevent.jl:185
+profile_printing_listener at ./Base.jl:332
+#start_profile_listener##0 at ./Base.jl:352
+jfptr_YY.start_profile_listenerYY.YY.0_2956.1 at /data/home/wac35960/.julia/juliaup/julia-1.12.7+0.x64.linux.gnu/lib/julia/sys.so (unknown line)
+jl_apply at /cache/build/builder-amdci5-2/julialang/julia-ci/src/julia.h:2394 [inlined]
+start_task at /cache/build/builder-amdci5-2/julialang/julia-ci/src/task.c:1253
+unknown function (ip: (nil)) at (unknown file)
+_ZN18HighsMipSolverData15feasibilityJumpEv at /data/home/wac35960/.julia/artifacts/bd345ac299fa48818efe3b36a1827d43ac7b3f00/lib/libhighs.so (unknown line)
+_ZN14HighsMipSolver3runEv at /data/home/wac35960/.julia/artifacts/bd345ac299fa48818efe3b36a1827d43ac7b3f00/lib/libhighs.so (unknown line)
+_ZN5Highs12callSolveMipEv at /data/home/wac35960/.julia/artifacts/bd345ac299fa48818efe3b36a1827d43ac7b3f00/lib/libhighs.so (unknown line)
+_ZN5Highs19calledOptimizeModelEv at /data/home/wac35960/.julia/artifacts/bd345ac299fa48818efe3b36a1827d43ac7b3f00/lib/libhighs.so (unknown line)
+_ZN5Highs13optimizeModelEv at /data/home/wac35960/.julia/artifacts/bd345ac299fa48818efe3b36a1827d43ac7b3f00/lib/libhighs.so (unknown line)
+_ZN5Highs3runEv at /data/home/wac35960/.julia/artifacts/bd345ac299fa48818efe3b36a1827d43ac7b3f00/lib/libhighs.so (unknown line)
+Highs_run at /data/home/wac35960/.julia/packages/HiGHS/iY2Ae/src/gen/libhighs.jl:344 [inlined]
+_Highs_run_workaround_issue_316 at /data/home/wac35960/.julia/packages/HiGHS/iY2Ae/src/MOI_wrapper.jl:2253 [inlined]
+#47 at /data/home/wac35960/.julia/packages/HiGHS/iY2Ae/src/MOI_wrapper.jl:2300 [inlined]
+disable_sigint at ./c.jl:167
+optimize! at /data/home/wac35960/.julia/packages/HiGHS/iY2Ae/src/MOI_wrapper.jl:2300
+optimize! at /data/home/wac35960/.julia/packages/MathOptInterface/13jDB/src/Bridges/bridge_optimizer.jl:367 [inlined]
+optimize! at /data/home/wac35960/.julia/packages/MathOptInterface/13jDB/src/MathOptInterface.jl:122 [inlined]
+optimize! at /data/home/wac35960/.julia/packages/MathOptInterface/13jDB/src/Utilities/cachingoptimizer.jl:370
+unknown function (ip: 0x70606ed6ada2) at (unknown file)
+#optimize!#96 at /data/home/wac35960/.julia/packages/JuMP/Y8Mtc/src/optimizer_interface.jl:633
+optimize! at /data/home/wac35960/.julia/packages/JuMP/Y8Mtc/src/optimizer_interface.jl:569 [inlined]
+#get_solution_by_graph#1 at /data/home/wac35960/gp_orange_challenge/source/Model.jl:66
+get_solution_by_graph at /data/home/wac35960/gp_orange_challenge/source/Model.jl:19 [inlined]
+#get_experimentRow_from_instance#1 at /data/home/wac35960/gp_orange_challenge/scripts/solve_instance.jl:105
+get_experimentRow_from_instance at /data/home/wac35960/gp_orange_challenge/scripts/solve_instance.jl:99 [inlined]
+main at /data/home/wac35960/gp_orange_challenge/scripts/solve_instance.jl:154
+unknown function (ip: 0x70606ed3821f) at (unknown file)
+jl_apply at /cache/build/builder-amdci5-2/julialang/julia-ci/src/julia.h:2394 [inlined]
+do_call at /cache/build/builder-amdci5-2/julialang/julia-ci/src/interpreter.c:123
+eval_value at /cache/build/builder-amdci5-2/julialang/julia-ci/src/interpreter.c:243
+eval_stmt_value at /cache/build/builder-amdci5-2/julialang/julia-ci/src/interpreter.c:194 [inlined]
+eval_body at /cache/build/builder-amdci5-2/julialang/julia-ci/src/interpreter.c:707
+eval_body at /cache/build/builder-amdci5-2/julialang/julia-ci/src/interpreter.c:558
+jl_interpret_toplevel_thunk at /cache/build/builder-amdci5-2/julialang/julia-ci/src/interpreter.c:898
+jl_toplevel_eval_flex at /cache/build/builder-amdci5-2/julialang/julia-ci/src/toplevel.c:1035
+jl_toplevel_eval_flex at /cache/build/builder-amdci5-2/julialang/julia-ci/src/toplevel.c:975
+ijl_toplevel_eval at /cache/build/builder-amdci5-2/julialang/julia-ci/src/toplevel.c:1047
+ijl_toplevel_eval_in at /cache/build/builder-amdci5-2/julialang/julia-ci/src/toplevel.c:1092
+eval at ./boot.jl:489
+include_string at ./loading.jl:2952
+_include at ./loading.jl:3012
+include at ./Base.jl:306
+exec_options at ./client.jl:317
+_start at ./client.jl:550
+jfptr__start_65616.1 at /data/home/wac35960/.julia/juliaup/julia-1.12.7+0.x64.linux.gnu/lib/julia/sys.so (unknown line)
+jl_apply at /cache/build/builder-amdci5-2/julialang/julia-ci/src/julia.h:2394 [inlined]
+true_main at /cache/build/builder-amdci5-2/julialang/julia-ci/src/jlapi.c:985
+jl_repl_entrypoint at /cache/build/builder-amdci5-2/julialang/julia-ci/src/jlapi.c:1153
+main at /cache/build/builder-amdci5-2/julialang/julia-ci/cli/loader_exe.c:58
+unknown function (ip: 0x706084829d8f) at /lib/x86_64-linux-gnu/libc.so.6
+__libc_start_main at /lib/x86_64-linux-gnu/libc.so.6 (unknown line)
+unknown function (ip: 0x4010b8) at /workspace/srcdir/glibc-2.17/csu/../sysdeps/x86_64/start.S
+unknown function (ip: (nil)) at (unknown file)
+Allocations: 16622067068 (Pool: 16622066678; Big: 390); GC: 2022
