@@ -60,10 +60,72 @@ println(sol)
 '
 ```
 
+## Run on a server (headless, non-blocking, parallel)
+
+The `scripts/` folder runs the experiments without Pluto, in the background, and
+extracts results incrementally so you can pull them as each instance finishes.
+
+Results and logs land in `runs/<runId>/`, keyed by a run id (the local server
+time, e.g. `20260825-134512`), and are committed so contributors can see them:
+
+```
+runs/<runId>/
+  results/setA-01.json … setA-20.json   # one JSON per instance, written as it finishes
+  results/summary.csv                   # aggregate table (from collect_results.jl)
+  logs/run.log                          # master log
+  logs/run.pid                          # PID of the detached launcher
+  logs/setA-01.log …                    # per-instance log
+```
+
+### One-time setup on the server
+
+```bash
+# install Julia 1.12 (juliaup) and clone the repo, then:
+rsync -avz ./ user@host:/path/to/gp_orange_challenge/   # or git clone/pull
+```
+
+### Launch the run (does not block your terminal)
+
+```bash
+bash scripts/run_on_server.sh            # detached via nohup (survives disconnect)
+# or
+bash scripts/run_on_server.sh tmux       # inside a tmux session you can reattach
+```
+
+`run_on_server.sh` instantiates the environment and starts all 20 instances in
+parallel (bounded by `MAX_PROCS`, default `min(8, detected cores)`).
+
+### Monitor and pull results incrementally
+
+```bash
+tail -f runs/<runId>/logs/run.log                    # live progress
+ls runs/<runId>/results/*.json | wc -l               # finished instances (20 = done)
+
+# from your local machine, sync results as they land:
+rsync -avz user@host:/path/to/gp_orange_challenge/runs/ ./runs/
+```
+
+### Build the aggregate table (Step-5 table)
+
+```bash
+julia --project=. scripts/collect_results.jl [runId]   # runId optional (latest by default)
+```
+
+writes `runs/<runId>/results/summary.csv`.
+
+### Scripts
+
+- `scripts/solve_instance.jl` — solve one instance, write one result JSON.
+- `scripts/run_parallel.sh` — run all instances in parallel with bounded concurrency.
+- `scripts/run_on_server.sh` — non-blocking launcher (`nohup` or `tmux`).
+- `scripts/collect_results.jl` — aggregate per-instance JSONs into `summary.csv`.
+
 ## Repository layout
 
 - `source/` — the Julia modules (Graph, SplitCoefficients, TrafficMatrix,
   Scenario, Model).
 - `data/` — the `setA` instances (`-net.json`, `-tm.json`, `-scenario.json`).
+- `scripts/` — headless runner + parallel/launcher/aggregation scripts.
+- `runs/` — per-run results and logs (committed).
 - `t0_experiments.jl` — the Pluto notebook implementing steps 1–5.
 - `project/` — challenge subject, notes, and the original instance data.

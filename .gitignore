@@ -1,0 +1,7 @@
+# OS junk
+.DS_Store
+*.swp
+*~
+
+# Transient process files (results and logs under runs/ stay visible and committed)
+*.pid
