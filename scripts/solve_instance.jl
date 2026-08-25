@@ -102,7 +102,14 @@ function get_experimentRow_from_instance(dataDir, instanceName; timeLimitSec = 9
     capacities = get_capacities_by_graph(graph)
     demands    = get_demands_from_instance(dataDir, instanceName, graph)
     maxSeg     = get_maxSegments_from_instance(dataDir, instanceName)
-    solution   = get_solution_by_graph(graph, r, demands, capacities, maxSeg; timeLimitSec)
+    # Assemble the period-0 model with the fluent builder, then solve it.
+    n          = nv(graph.graph)
+    builder    = AsrModelBuilder(; timeLimitSec)
+    set_variables!(builder, demands, n)
+    set_flowConservation!(builder, demands, n)
+    set_segmentCap!(builder, demands, n, maxSeg)
+    set_loadBounds!(builder, graph, r, demands, capacities)
+    solution   = solve!(build(builder))
     return (
         instance   = instanceName,
         succeeded  = true,
