@@ -47,9 +47,13 @@ echo "runId=$RUN_ID cores=$CORES maxProcs=$MAX_PROCS timeLimit=${TIME_LIMIT}s"
 echo "resultsDir=$RESULTS_DIR"
 
 # Ensure the project environment is instantiated (downloads the HiGHS artifact on
-# the first run; idempotent and fast afterwards).
+# the first run; idempotent and fast afterwards). Abort early on failure so a bad
+# environment does not fan out into one confusing failure per instance.
 echo "==> instantiating project environment..."
-"$JULIA" --project="$REPO_ROOT" -e 'using Pkg; Pkg.instantiate()'
+if ! "$JULIA" --project="$REPO_ROOT" -e 'using Pkg; Pkg.instantiate()'; then
+    echo "ERROR: Pkg.instantiate() failed; aborting." >&2
+    exit 1
+fi
 
 # Discover instance names from the -net.json files in the data dir.
 instances=()
@@ -72,17 +76,28 @@ run_instance() {
         > "$LOGS_DIR/$name.log" 2>&1
 }
 
-# Bounded job pool (bash-3.2 safe: waves of MAX_PROCS, then wait).
-running=0
+# Bounded job pool (bash-3.2 safe: waves of MAX_PROCS). Track each job's exit
+# code so the script reports failure instead of silently succeeding when an
+# instance solve returns non-zero.
+pids=()
+failures=0
 for name in "${instances[@]}"; do
     run_instance "$name" &
-    running=$((running + 1))
-    if [ "$running" -ge "$MAX_PROCS" ]; then
-        wait
-        running=0
+    pids+=($!)
+    if [ "${#pids[@]}" -ge "$MAX_PROCS" ]; then
+        for pid in "${pids[@]}"; do
+            wait "$pid" || failures=$((failures + 1))
+        done
+        pids=()
     fi
 done
-wait
+for pid in "${pids[@]}"; do
+    wait "$pid" || failures=$((failures + 1))
+done
 
 count="$(find "$RESULTS_DIR" -maxdepth 1 -name '*.json' | wc -l | tr -d ' ')"
 echo "done: $count instance result(s) written to $RESULTS_DIR"
+if [ "$failures" -gt 0 ]; then
+    echo "WARNING: $failures instance(s) failed (non-zero exit code)." >&2
+    exit 1
+fi

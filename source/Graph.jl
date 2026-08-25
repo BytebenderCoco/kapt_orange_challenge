@@ -80,10 +80,10 @@ function is_jsonData_valid(data)
         end
     end
 
-    if Bool(data.multigraph)
-        @warn "multigraph=true is not supported (uses SimpleGraph/SimpleDiGraph)."
-        return false
-    end
+    # Note: the `multigraph` flag only declares that parallel arcs are *allowed*;
+    # the setA instances set it to true without actually containing any parallel
+    # arcs. We therefore accept the flag and instead reject only real parallel
+    # arcs (below), which SimpleGraph/SimpleDiGraph genuinely cannot represent.
 
     # Collect node ids, checking for duplicates.
     ids = Set{Int}()
@@ -96,7 +96,8 @@ function is_jsonData_valid(data)
         push!(ids, id)
     end
 
-    # Check links: endpoints must be known nodes, no repeated endpoint pair.
+    # Check links: endpoints must be known nodes, no repeated endpoint pair
+    # (actual parallel arcs are unsupported by SimpleGraph/SimpleDiGraph).
     seen = Set{Tuple{Int, Int}}()
     for link in data.links
         fromId = Int(link.from)
@@ -113,7 +114,7 @@ function is_jsonData_valid(data)
 
         key = Bool(data.directed) ? (fromId, toId) : minmax(fromId, toId)
         if key in seen
-            @warn "Multiple links between the same endpoints are not supported when multigraph=false."
+            @warn "Multiple links between the same endpoints are not supported (uses SimpleGraph/SimpleDiGraph)."
             return false
         end
         push!(seen, key)

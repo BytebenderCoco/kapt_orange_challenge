@@ -104,15 +104,26 @@ function set_loadBounds!(builder::AsrModelBuilder, network::NetworkGraph, r, dem
     x = builder.x
     lambda = builder.lambda
     graph = network.graph
-    n = nv(graph)
+
+    # Reverse index: arc (u, v) -> [(i, j, coef)] for every nonzero r(i, j, a).
+    # r is sparse (an arc carries only the segment pairs whose shortest path uses
+    # it), so summing over these pairs instead of all n² per arc avoids the
+    # O(m·|D|·n²) term blowup that otherwise stalls model construction.
+    splitByArc = Dict{Tuple{Int, Int}, Vector{Tuple{Int, Int, Float64}}}()
+    for ((i, j, arc), coef) in r
+        push!(get!(() -> Tuple{Int, Int, Float64}[], splitByArc, arc), (i, j, coef))
+    end
+
     for edge in edges(graph)
         u, v = src(edge), dst(edge)
         # c(a): capacity of arc a
         c = capacities[(u, v)]
+        # The segment pairs (and coefficients) whose flow traverses arc a.
+        pairs = get(splitByArc, (u, v), Tuple{Int, Int, Float64}[])
         load = @expression(model, sum(
             # r(i, j, a) · φ(d, 0) · x^{d,0}_{ij}
-            get(r, (i, j, (u, v)), 0.0) * demand.volumes[1] * x[demand, i, j]
-            for demand in demands, i in 1:n, j in 1:n if i != j
+            coef * demand.volumes[1] * x[demand, i, j]
+            for (i, j, coef) in pairs for demand in demands
         ))
         @constraint(model, load <= lambda * c)
     end

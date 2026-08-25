@@ -81,7 +81,7 @@ runs/<runId>/
 
 ```bash
 # install Julia 1.12 (juliaup) and clone the repo, then:
-rsync -avz ./ user@host:/path/to/gp_orange_challenge/   # or git clone/pull
+rsync -avz ./ user@host:/path/to/kapt_orange_challenge/   # or git clone/pull
 ```
 
 ### Launch the run (does not block your terminal)
@@ -102,7 +102,7 @@ tail -f runs/<runId>/logs/run.log                    # live progress
 ls runs/<runId>/results/*.json | wc -l               # finished instances (20 = done)
 
 # from your local machine, sync results as they land:
-rsync -avz user@host:/path/to/gp_orange_challenge/runs/ ./runs/
+rsync -avz user@host:/path/to/kapt_orange_challenge/runs/ ./runs/
 ```
 
 ### Build the aggregate table (Step-5 table)

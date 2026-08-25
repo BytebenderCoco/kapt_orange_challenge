@@ -39,17 +39,24 @@ function parse_args(args)
     timeLimitSec = 900
     positional   = String[]
 
+    # Return the value following a `--flag`, erroring clearly if it is missing
+    # (rather than throwing an opaque BoundsError from `args[i + 1]`).
+    option_value(name, i) = begin
+        i + 1 <= length(args) || error("Option $name requires a value.")
+        args[i + 1]
+    end
+
     i = 1
     while i <= length(args)
         arg = args[i]
         if arg == "--output" || arg == "-o"
-            resultsDir = args[i + 1]
+            resultsDir = option_value(arg, i)
             i += 2
         elseif arg == "--data-dir"
-            dataDir = args[i + 1]
+            dataDir = option_value(arg, i)
             i += 2
         elseif arg == "--time-limit"
-            timeLimitSec = parse(Int, args[i + 1])
+            timeLimitSec = parse(Int, option_value(arg, i))
             i += 2
         elseif startswith(arg, "--")
             error("Unknown option: $arg")
