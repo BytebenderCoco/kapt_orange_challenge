@@ -44,6 +44,21 @@ file, a JSON document, the network, disk.
 get_networkGraph_from_json(path)      # load a graph from a JSON file
 ```
 
+The WHERE may be a **logical** external source, not only a single file. An
+**instance** is one such source: a filename stem (e.g. `"setA-01"`) that names the
+three JSON files `<stem>-net.json`, `<stem>-tm.json`, `<stem>-scenario.json`. A
+`get_WHAT_from_instance(dataDir, instanceName, …)` reads and validates the one file
+that holds its WHAT, then calls the matching `Graph` / `TrafficMatrix` / `Scenario`
+parser. These wrappers are the notebook-side glue that turns an instance on disk into
+model inputs — one wrapper per quantity, matching the one-quantity-per-cell rhythm of
+the walkthrough (no bundling; see *Multiple outputs* for when bundling is right).
+
+```julia
+get_graph_from_instance(dataDir, instanceName)          # -net.json  → NetworkGraph
+get_demands_from_instance(dataDir, instanceName, graph) # -tm.json   → demands
+get_maxSegments_from_instance(dataDir, instanceName)    # -scenario.json → maxSeg
+```
+
 #### `is_WHAT_ATTRIBUTE` — boolean predicate
 
 Test whether some **local data** WHAT has (or lacks) an ATTRIBUTE. Returns a
@@ -51,6 +66,66 @@ Test whether some **local data** WHAT has (or lacks) an ATTRIBUTE. Returns a
 
 ```julia
 is_arc_directed(net, u, v)            # does this arc have direction?
+```
+
+#### `save_WHAT_to_WHERE` — persist output to an external sink
+
+The write-side mirror of `get_WHAT_from_WHERE`: take an **in-memory** WHAT and
+persist it **outside** the program — a file, disk, the network. `to` mirrors
+`from`; the WHERE names the sink (`json`, and by extension the directory the
+document lands in).
+
+```julia
+save_results_to_json(results, t0ResultsDir)   # results table → t0_results/<ts>.json
+```
+
+#### `record_WHAT!` — append to an in-memory log
+
+Append a WHAT to a **mutable in-memory** collection, growing a running log for a
+later single write. The `!` follows Julia's mutation convention. Unlike
+`save_WHAT_to_WHERE`, nothing leaves the program at call time — it accumulates in
+memory; the eventual `save_*` is what persists it.
+
+```julia
+record_event!(events, "graph calculated")   # push one step onto the event log
+```
+
+#### `set_WHAT!` / `add_WHAT!` — configure a mutable builder
+
+Attach a part WHAT to a **mutable** model/builder, JuMP-style: construct a default
+builder, then mutate it step by step before freezing it. Use **`set_`** when the
+part is **required** for the product to be well-formed, **`add_`** when it is
+**optional**. Both carry Julia's `!` and return the builder so steps can be
+sequenced. The WHAT names the part — a constraint block, a variable set — in
+Tier-2 `camelCase`.
+
+```julia
+set_variables!(builder, demands, n)                         # required
+set_flowConservation!(builder, demands, n)                  # required
+add_budgetBounds!(builder, ...)                             # optional (only for T*)
+```
+
+A single-valued default (e.g. the `Min λ` objective) that the constructor already
+seeds is not a `set_*!` step at all — it lives in the builder's construction.
+
+#### `build` — freeze a builder into its product
+
+Take a fully-configured builder and return the **immutable product** it was
+assembling. The write-once counterpart to the `set_`/`add_` steps; `build` is a
+sanctioned action word.
+
+```julia
+model = build(builder)   # AsrModelBuilder → AsrModel
+```
+
+#### `solve!` — run the solver on a model
+
+Run the optimizer on an assembled model, **mutating** it with the solve result,
+and return the solution. The `!` marks the mutation; `solve` is a sanctioned
+action word.
+
+```julia
+solution = solve!(model)   # optimize! + extract (status, mlu, gap, ...)
 ```
 
 ### Multiple outputs → one umbrella WHAT
@@ -64,6 +139,12 @@ come from genuinely separate computations.
 get_ecmpData_by_graph(graph, metricMatrix)  # returns distances + path counts
                                             # from one Dijkstra sweep per source
 ```
+
+`experimentRow` is such an umbrella WHAT: `get_experimentRow_from_instance` runs the
+whole period-0 pipeline for one instance and returns a single result record — graph
+metadata (vertices, links, demands) plus the solve outcome (status, mlu, gap, cpuTime).
+The pieces are genuinely coupled (all produced by the one solve run), and the record is
+one row of the Step 5 experiment table.
 
 ## Variables
 
@@ -103,6 +184,8 @@ Symbols currently in use:
 | `x`      | `x^{dt}_{ij}` — segment decision variable |
 | `lambda` | `λ` — max link utilization (MLU), the objective |
 | `mlu`    | `λ*` — the optimized MLU value returned by the solve |
+| `beta`   | `β(t)` — reconfiguration budget: cap on segment changes from t−1 to t |
+| `t`      | time period / segment-routing period index |
 
 ### Tier 2 — everything else → descriptive `camelCase`
 
@@ -118,6 +201,10 @@ a readable name in `camelCase` (matching the function-WHAT casing).
 | `demands`       | the traffic-matrix demands (`(id, source, target, volumes)` each) |
 | `edge`          | current edge |
 | `dijkstraState` | Dijkstra result object |
+| `dataDir`       | directory holding the setA instance JSON files |
+| `instanceName`  | an instance's filename stem, e.g. `"setA-01"` |
+| `results`       | the Step 5 table: a vector of `experimentRow`s |
+| `timeLimitSec`  | the solver wall-clock cap in seconds (900 for t0, 1800 for t1) |
 
 A container holding a spec quantity is Tier 2, not Tier 1: `capacities` maps arcs
 to `c(a)` but is named descriptively, exactly as `metricMatrix` holds `ω` values

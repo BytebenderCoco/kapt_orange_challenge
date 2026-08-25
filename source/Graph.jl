@@ -3,7 +3,7 @@ module Graph
 using Graphs
 
 export NetworkGraph, get_graph_from_json, is_jsonData_valid, get_edgeData_by_graph,
-    get_capacities_by_graph, get_vertex_by_jsonId
+    get_capacities_by_graph, get_vertex_by_jsonId, get_graph_by_downtimeLinks
 
 struct NetworkGraph{G<:AbstractGraph}
     graph::G
@@ -80,10 +80,11 @@ function is_jsonData_valid(data)
         end
     end
 
-    if Bool(data.multigraph)
-        @warn "multigraph=true is not supported (uses SimpleGraph/SimpleDiGraph)."
-        return false
-    end
+    # The `multigraph` flag itself is not a rejection criterion: several setA
+    # instances set it while carrying no parallel edges, and SimpleGraph/SimpleDiGraph
+    # represent those losslessly. What we cannot represent is an actual repeated
+    # endpoint pair (it would silently overwrite an edgeData entry); that is caught
+    # structurally by the duplicate-endpoint check below, regardless of the flag.
 
     # Collect node ids, checking for duplicates.
     ids = Set{Int}()
@@ -113,7 +114,7 @@ function is_jsonData_valid(data)
 
         key = Bool(data.directed) ? (fromId, toId) : minmax(fromId, toId)
         if key in seen
-            @warn "Multiple links between the same endpoints are not supported when multigraph=false."
+            @warn "Parallel edges (a repeated endpoint pair) are not supported: $key"
             return false
         end
         push!(seen, key)
@@ -134,6 +135,36 @@ end
 # nodeData[v].jsonId mapping recorded by get_graph_from_json).
 function get_vertex_by_jsonId(network::NetworkGraph, id::Integer)
     return network.jsonToVertex[Int(id)]
+end
+
+# The period-t graph: a copy of `network` with the arcs whose JSON link id is in
+# downtimeLinks removed (the links q(t) takes down at that period). The node set,
+# nodeData and jsonToVertex are unchanged — only arcs disappear — so vertex numbers
+# stay stable across periods and the split coefficients can be recomputed on the
+# result. The original edge key convention (directed (u,v) / undirected minmax) is
+# preserved by copying keys verbatim, and the new graph keeps the same directedness.
+function get_graph_by_downtimeLinks(network::NetworkGraph, downtimeLinks)
+    down = Set(Int.(downtimeLinks))
+    n = nv(network.graph)
+    graph = is_directed(network.graph) ? SimpleDiGraph(n) : SimpleGraph(n)
+
+    edgeData = empty(network.edgeData)
+    seen = Set{Int}()
+    for (key, data) in network.edgeData
+        push!(seen, data.id)
+        data.id in down && continue
+        u, v = key
+        add_edge!(graph, u, v)
+        edgeData[key] = data
+    end
+
+    # A down-link id that names no arc is almost certainly a wrong/stale scenario
+    # reference; warn but proceed (the graph is simply unchanged for that id).
+    for id in down
+        id in seen || @warn "downtimeLinks references unknown link id: $id"
+    end
+
+    return NetworkGraph(graph, network.nodeData, network.jsonToVertex, edgeData)
 end
 
 # Arc capacities c(a): a map from each arc (keyed by its endpoints, same

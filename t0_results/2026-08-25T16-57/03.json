@@ -1,0 +1,108 @@
+{
+    "version": "1.1.0",
+    "instance": "03",
+    "succeeded": true,
+    "results": {
+        "vertices": 50,
+        "links": 250,
+        "demands": 20,
+        "status": "OPTIMAL",
+        "mlu": 0.9435434146341662,
+        "gap": 0.009398792670139433,
+        "cpuTime": 13.756522178649902,
+        "waypoints": [
+            [
+            ],
+            [
+            ],
+            [
+            ],
+            [
+            ],
+            [
+                22
+            ],
+            [
+                19
+            ],
+            [
+            ],
+            [
+                39
+            ],
+            [
+                4,
+                2,
+                0,
+                13
+            ],
+            [
+            ],
+            [
+            ],
+            [
+            ],
+            [
+            ],
+            [
+            ],
+            [
+                20,
+                6,
+                21
+            ],
+            [
+                18,
+                36,
+                9,
+                26
+            ],
+            [
+            ],
+            [
+            ],
+            [
+            ],
+            [
+                30
+            ]
+        ]
+    },
+    "events": [
+        {
+            "time": "2026-08-25T16-58-56",
+            "level": "info",
+            "message": "loading instance data"
+        },
+        {
+            "time": "2026-08-25T16-58-56",
+            "level": "info",
+            "message": "graph calculated"
+        },
+        {
+            "time": "2026-08-25T16-58-56",
+            "level": "info",
+            "message": "parameters built"
+        },
+        {
+            "time": "2026-08-25T16-58-56",
+            "level": "info",
+            "message": "building model"
+        },
+        {
+            "time": "2026-08-25T16-58-59",
+            "level": "info",
+            "message": "solving model"
+        },
+        {
+            "time": "2026-08-25T16-59-13",
+            "level": "info",
+            "message": "model solved"
+        },
+        {
+            "time": "2026-08-25T16-59-13",
+            "level": "info",
+            "message": "waypoints decoded"
+        }
+    ]
+}

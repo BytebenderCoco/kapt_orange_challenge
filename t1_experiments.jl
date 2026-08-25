@@ -4,7 +4,7 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ b0000000-0000-4000-8000-000000000002
+# ╔═╡ c0000000-0000-4000-8000-000000000002
 begin
     using JSON3
     using Dates
@@ -24,16 +24,22 @@ begin
     using .Model
 end
 
-# ╔═╡ b0000000-0000-4000-8000-000000000001
+# ╔═╡ c0000000-0000-4000-8000-000000000001
 md"""
-# Step 1 — Load the network graph
+# Step 6 — Build the period-1 graph and its parameters
+
+Period 1 is a **maintenance** period: the scenario's `interventions` take some
+links down. We build `G₁` by removing those down-links from the nominal graph
+`G₀`, then recompute the split coefficients `r₁` on `G₁`. The node set is
+unchanged, so vertex numbers (and hence the `x^{d,t}_{ij}` indices) mean the same
+node in both periods.
 """
 
-# ╔═╡ b0000000-0000-4000-8000-00000000000b
+# ╔═╡ c0000000-0000-4000-8000-00000000000b
 dataDir = joinpath(@__DIR__, "data")
 
-# ╔═╡ b0000000-0000-4000-8000-00000000000c
-# Load and validate the network graph from one instance's -net.json.
+# ╔═╡ c0000000-0000-4000-8000-00000000000c
+# Load and validate the nominal network graph from one instance's -net.json.
 function get_graph_from_instance(dataDir, instanceName)
     net_file = joinpath(dataDir, "$instanceName-net.json")
     json = JSON3.read(read(net_file, String))
@@ -42,28 +48,56 @@ function get_graph_from_instance(dataDir, instanceName)
     return get_graph_from_json(json)
 end
 
-# ╔═╡ b0000000-0000-4000-8000-000000000003
+# ╔═╡ c0000000-0000-4000-8000-000000000024
+# downtimeLinks q(t): the JSON link ids down at period t, loaded and validated from
+# one instance's -scenario.json.
+function get_downtimeLinks_from_instance(dataDir, instanceName, t)
+    scenario_file = joinpath(dataDir, "$instanceName-scenario.json")
+    scenario = JSON3.read(read(scenario_file, String))
+    is_scenarioData_valid(scenario) ||
+        error("Invalid scenario JSON: $scenario_file")
+    return get_downtimeLinks_from_json(scenario, t)
+end
+
+# ╔═╡ c0000000-0000-4000-8000-000000000003
+# G₀: the nominal (period-0) graph.
 graph = get_graph_from_instance(dataDir, "setA-01")
 
-# ╔═╡ b0000000-0000-4000-8000-000000000004
-md"""
-# Step 2 — Compute the split coefficients `r`
-"""
-
-# ╔═╡ b0000000-0000-4000-8000-000000000005
+# ╔═╡ c0000000-0000-4000-8000-000000000005
+# r₀: split coefficients on G₀.
 r = get_splitCoefficients_by_graph(graph)
 
-# ╔═╡ b0000000-0000-4000-8000-000000000006
-md"""
-# Step 3 — Derive the model parameters (Data section)
+# ╔═╡ c0000000-0000-4000-8000-000000000020
+# The links q(1) takes down at period 1.
+downtimeLinks = get_downtimeLinks_from_instance(dataDir, "setA-01", 1)
 
-Assemble the parameters the model consumes from the three input files: link
-capacities `c(a)` from the net (Step 1), the split coefficients `r` (Step 2),
-the demands `φ(d, t)` from the traffic matrix, and `maxSeg` from the scenario.
+# ╔═╡ c0000000-0000-4000-8000-000000000021
+# G₁: the period-1 graph, with the down-links removed.
+graph1 = get_graph_by_downtimeLinks(graph, downtimeLinks)
+
+# ╔═╡ c0000000-0000-4000-8000-000000000022
+# r₁: split coefficients recomputed on G₁.
+r1 = get_splitCoefficients_by_graph(graph1)
+
+# ╔═╡ c0000000-0000-4000-8000-000000000023
+md"""
+`G₀` has **$(ne(graph.graph))** links; removing the period-1 down-links
+`$(downtimeLinks)` leaves `G₁` with **$(ne(graph1.graph))** links (same
+**$(nv(graph.graph))** nodes).
 """
 
-# ╔═╡ b0000000-0000-4000-8000-00000000000d
-# φ(d, t): demand volumes, loaded and validated from one instance's -tm.json.
+# ╔═╡ c0000000-0000-4000-8000-000000000006
+md"""
+# Data section — derive the model parameters
+
+Assemble the parameters the two-period model consumes: link capacities `c(a)`,
+the split coefficients `r₀`/`r₁` (above), the demands `φ(d, t)` (both time slots
+`t = 0, 1`), `maxSeg`, and the reconfiguration budget `β(1)` from the scenario.
+"""
+
+# ╔═╡ c0000000-0000-4000-8000-00000000000d
+# φ(d, t): demand volumes (both time slots), loaded and validated from one
+# instance's -tm.json.
 function get_demands_from_instance(dataDir, instanceName, graph)
     tm_file = joinpath(dataDir, "$instanceName-tm.json")
     tm = JSON3.read(read(tm_file, String))
@@ -72,7 +106,7 @@ function get_demands_from_instance(dataDir, instanceName, graph)
     return get_demands_from_json(tm, graph)
 end
 
-# ╔═╡ b0000000-0000-4000-8000-00000000000e
+# ╔═╡ c0000000-0000-4000-8000-00000000000e
 # maxSeg: loaded and validated from one instance's -scenario.json.
 function get_maxSegments_from_instance(dataDir, instanceName)
     scenario_file = joinpath(dataDir, "$instanceName-scenario.json")
@@ -82,46 +116,68 @@ function get_maxSegments_from_instance(dataDir, instanceName)
     return get_maxSegments_from_json(scenario)
 end
 
-# ╔═╡ b0000000-0000-4000-8000-000000000007
-# c(a): capacity of every arc, read from the graph's edge data.
+# ╔═╡ c0000000-0000-4000-8000-000000000025
+# β(t): reconfiguration budget at period t, loaded and validated from one
+# instance's -scenario.json.
+function get_budget_from_instance(dataDir, instanceName, t)
+    scenario_file = joinpath(dataDir, "$instanceName-scenario.json")
+    scenario = JSON3.read(read(scenario_file, String))
+    is_scenarioData_valid(scenario) ||
+        error("Invalid scenario JSON: $scenario_file")
+    return get_budget_from_json(scenario, t)
+end
+
+# ╔═╡ c0000000-0000-4000-8000-000000000007
+# c(a): capacity of every arc, read from the nominal graph's edge data (shown for
+# the Data section; the model derives per-period capacities from each period graph).
 capacities = get_capacities_by_graph(graph)
 
-# ╔═╡ b0000000-0000-4000-8000-00000000000f
+# ╔═╡ c0000000-0000-4000-8000-00000000000f
 demands = get_demands_from_instance(dataDir, "setA-01", graph)
 
-# ╔═╡ b0000000-0000-4000-8000-000000000010
+# ╔═╡ c0000000-0000-4000-8000-000000000010
 maxSeg = get_maxSegments_from_instance(dataDir, "setA-01")
 
-# ╔═╡ b0000000-0000-4000-8000-000000000008
-md"""
-# Step 4 — Period-0 model (MLU minimization)
+# ╔═╡ c0000000-0000-4000-8000-000000000026
+# β(1): the reconfiguration budget linking period 0 → 1.
+budget1 = get_budget_from_instance(dataDir, "setA-01", 1)
 
-Build and solve the MILP for time period 0: pick a segment path for every demand
-so the maximum link utilization `λ` (MLU) is minimized, subject to flow
-conservation, the `maxSeg` cap, and the per-arc load constraint.
+# ╔═╡ c0000000-0000-4000-8000-000000000008
+md"""
+# Step 7 — Two-period model (periods 0 and 1, with the budget)
+
+Build and solve the MILP over both periods: pick a segment path for every demand
+in each period so the maximum link utilization `λ` (MLU) across **all arcs in both
+periods** is minimized, subject to flow conservation, the `maxSeg` cap, the
+per-arc load constraint (with `r₀`/`r₁`), and the **budget** `β(1)` capping the
+total rerouting between periods.
+
+The objective is single-level MLU minimization — the spec's lexicographic min-max
+is reduced to its first level, exactly as in step 5.
 """
 
-# ╔═╡ b0000000-0000-4000-8000-000000000009
+# ╔═╡ c0000000-0000-4000-8000-000000000009
 begin
-    # Assemble the period-0 model with the fluent builder, then hand the caller a
-    # solvable AsrModel — nothing is solved until `solve!` below. The model is
-    # period-aware; for steps 1–5 the period set is just {0} (no budget step).
+    # Assemble the two-period model with the fluent builder. periodInputs[t] is the
+    # (graph, r) bundle for period t; add_budgetBounds! is the optional step that
+    # links the periods with the budget. Nothing is solved until `solve!` below.
     n = nv(graph.graph)
-    periods = 0:0
-    # periodInputs[t] = (graph = G_t, r = r_t): here only the nominal period 0.
-    periodInputs = Dict(0 => (graph = graph, r = r))
-    builder = AsrModelBuilder(; timeLimitSec = 900)
+    periods = 0:1
+    periodInputs = Dict(0 => (graph = graph, r = r), 1 => (graph = graph1, r = r1))
+    builder = AsrModelBuilder(; timeLimitSec = 1800)
     set_variables!(builder, demands, n, periods)
     set_flowConservation!(builder, demands, n, periods)
     set_segmentCap!(builder, demands, n, maxSeg, periods)
     set_loadBounds!(builder, periodInputs, demands, periods)
+    # (4) β(1) links period 0 → 1: total rerouting must stay within the budget.
+    add_budgetBounds!(builder, demands, n, Dict(1 => budget1), periods)
     model = build(builder)
 end
 
-# ╔═╡ b0000000-0000-4000-8000-00000000001a
+# ╔═╡ c0000000-0000-4000-8000-00000000001a
 solution = solve!(model)
 
-# ╔═╡ b0000000-0000-4000-8000-00000000000a
+# ╔═╡ c0000000-0000-4000-8000-00000000000a
 (
     status  = solution.status,
     mlu     = solution.mlu,
@@ -129,55 +185,68 @@ solution = solve!(model)
     cpuTime = solution.cpuTime,
 )
 
-# ╔═╡ b0000000-0000-4000-8000-000000000011
-md"""
-# Step 5 — Numerical experiments on all setA instances
+# ╔═╡ c0000000-0000-4000-8000-000000000027
+# Per-period routing scheme: waypoints[t] is the per-demand waypoint list (JSON
+# node ids) at period t. The rerouting from period 0 to period 1 stays within β(1).
+waypoints = get_waypoints_by_solvedModel(model, periodInputs, demands, periods)
 
-Run the period-0 pipeline over every instance found in `data/` (900 s solve limit
+# ╔═╡ c0000000-0000-4000-8000-000000000011
+md"""
+# Step 8 — Numerical experiments on all setA instances
+
+Run the two-period pipeline over every instance in `data/` (1800 s solve limit
 each) and tabulate vertices, links, demands, and the solve outcome (MLU, gap,
-status, CPU time). Every stage reuses the same functions as the single-instance
-walkthrough above — nothing is duplicated.
+status, CPU time), plus the per-period routing waypoints. Every stage reuses the
+same functions as the single-instance walkthrough above — nothing is duplicated.
 """
 
-# ╔═╡ b0000000-0000-4000-8000-000000000012
+# ╔═╡ c0000000-0000-4000-8000-000000000012
 # Instance stems (e.g. "setA-01") discovered from the -net.json files in `data/`.
 get_instanceNames_from_dir(dataDir) =
     sort([replace(f, "-net.json" => "")
           for f in readdir(dataDir) if endswith(f, "-net.json")])
 
-# ╔═╡ b0000000-0000-4000-8000-000000000019
+# ╔═╡ c0000000-0000-4000-8000-000000000019
 # Append one timestamped event to an instance's log (info by default, :error on failure).
 record_event!(events, message; level = :info) =
     push!(events, (time = Dates.format(now(), "yyyy-mm-ddTHH-MM-SS"), level, message))
 
-# ╔═╡ b0000000-0000-4000-8000-000000000013
-# One result row for a single instance: run the whole period-0 pipeline and return its
-# graph metadata plus the solve outcome, recording each pipeline step into `events`.
-function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 900)
+# ╔═╡ c0000000-0000-4000-8000-000000000013
+# One result row for a single instance: run the whole two-period pipeline (build G₀
+# and G₁, recompute r₀/r₁, assemble + solve the budgeted two-period model) and
+# return its graph metadata plus the solve outcome, recording each pipeline step
+# into `events`.
+function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 1800)
     record_event!(events, "loading instance data")
-    graph      = get_graph_from_instance(dataDir, instanceName)
-    record_event!(events, "graph calculated")
-    r          = get_splitCoefficients_by_graph(graph)
-    demands    = get_demands_from_instance(dataDir, instanceName, graph)
-    maxSeg     = get_maxSegments_from_instance(dataDir, instanceName)
+    graph         = get_graph_from_instance(dataDir, instanceName)
+    record_event!(events, "period-0 graph calculated")
+    r             = get_splitCoefficients_by_graph(graph)
+    downtimeLinks = get_downtimeLinks_from_instance(dataDir, instanceName, 1)
+    graph1        = get_graph_by_downtimeLinks(graph, downtimeLinks)
+    record_event!(events, "period-1 graph calculated")
+    r1            = get_splitCoefficients_by_graph(graph1)
+    demands       = get_demands_from_instance(dataDir, instanceName, graph)
+    maxSeg        = get_maxSegments_from_instance(dataDir, instanceName)
+    budget1       = get_budget_from_instance(dataDir, instanceName, 1)
     record_event!(events, "parameters built")
     record_event!(events, "building model")
-    n          = nv(graph.graph)
-    periods    = 0:0
-    periodInputs = Dict(0 => (graph = graph, r = r))
-    builder    = AsrModelBuilder(; timeLimitSec)
+    n             = nv(graph.graph)
+    periods       = 0:1
+    periodInputs  = Dict(0 => (graph = graph, r = r), 1 => (graph = graph1, r = r1))
+    builder       = AsrModelBuilder(; timeLimitSec)
     set_variables!(builder, demands, n, periods)
     set_flowConservation!(builder, demands, n, periods)
     set_segmentCap!(builder, demands, n, maxSeg, periods)
     set_loadBounds!(builder, periodInputs, demands, periods)
-    model      = build(builder)
+    add_budgetBounds!(builder, demands, n, Dict(1 => budget1), periods)
+    model         = build(builder)
     record_event!(events, "solving model")
-    solution   = solve!(model)
+    solution      = solve!(model)
     record_event!(events, "model solved")
-    # Decode the routing scheme: per-demand waypoint lists (JSON node ids) for the
-    # only period here, 0. Empty for a demand routed on shortest paths, or for the
-    # whole run if infeasible.
-    waypoints  = get_waypoints_by_solvedModel(model, periodInputs, demands, periods)[0]
+    # Decode the routing scheme: per-period, per-demand waypoint lists (JSON node
+    # ids). Empty for a demand routed on shortest paths, or for the whole run if
+    # infeasible.
+    waypoints     = get_waypoints_by_solvedModel(model, periodInputs, demands, periods)
     record_event!(events, "waypoints decoded")
     return (
         instance  = instanceName,
@@ -192,37 +261,36 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     )
 end
 
-# ╔═╡ b0000000-0000-4000-8000-000000000015
+# ╔═╡ c0000000-0000-4000-8000-000000000015
 md"""
 ## Persist the results
 
-The sweep writes each instance to `t0_results/<timestamp>/<index>.json` **as it
+The sweep writes each instance to `t1_results/<timestamp>/<index>.json` **as it
 finishes**, not in one final batch — so cancelling the notebook keeps every instance
 that already completed. Each file holds the instance's index, whether the run
-succeeded, the solve metrics, and an `events` log recording each pipeline step (and
-any failure). This is the write-side mirror of the `get_*_from_instance` readers.
+succeeded, the solve metrics, the per-period routing `waypoints` (a map period →
+per-demand lists), and an `events` log recording each pipeline step (and any
+failure). This is the write-side mirror of the `get_*_from_instance` readers.
 """
 
-# ╔═╡ b0000000-0000-4000-8000-000000000016
-t0ResultsDir = joinpath(@__DIR__, "t0_results")
+# ╔═╡ c0000000-0000-4000-8000-000000000016
+t1ResultsDir = joinpath(@__DIR__, "t1_results")
 
-# ╔═╡ b0000000-0000-4000-8000-000000000017
+# ╔═╡ c0000000-0000-4000-8000-000000000017
 begin
     # "01" from "setA-01": the instance's index within its set (the trailing -NN, no dash).
     get_index_by_instanceName(instanceName) = replace(instanceName, r"^.*-" => "")
-    
-    # Persist one experiment row to t0_results/<timestamp>/<index>.json. The file carries a
+
+    # Persist one experiment row to t1_results/<timestamp>/<index>.json. The file carries a
     # schema `version`, the instance `index`, a `succeeded` flag (false for the rows the
-    # try/catch turned into :error), the solve metrics, the per-demand routing `waypoints`,
-    # and the `events` log (each a time/level/message record of a pipeline step, or the
-    # failure). Writing per row as the
-    # sweep goes (not one final batch) means a cancelled run keeps every instance already
-    # finished. JSON has no Inf and no native enum, so a non-finite mlu is written as null
-    # and the solver status as its name string.
+    # try/catch turned into :error), the solve metrics, the per-period routing `waypoints`,
+    # and the `events` log. Writing per row as the sweep goes (not one final batch) means a
+    # cancelled run keeps every instance already finished. JSON has no Inf and no native
+    # enum, so a non-finite mlu is written as null and the solver status as its name string.
     function save_experimentRow_to_json(row, runDir, events)
         index = get_index_by_instanceName(row.instance)
         doc = (
-            version   = "1.1.0",
+            version   = "2.0.0",
             instance  = index,
             succeeded = row.status !== :error,
             results   = (
@@ -233,8 +301,9 @@ begin
                 mlu       = (row.mlu === missing || isfinite(row.mlu)) ? row.mlu : nothing,
                 gap       = row.gap,
                 cpuTime   = row.cpuTime,
-                # Per-demand waypoint lists (JSON node ids); [] = shortest-path
-                # routing, null for a failed run. Not yet the srpaths.json format.
+                # Per-period, per-demand waypoint lists (JSON node ids), keyed by
+                # period: waypoints["0"]/["1"]. [] = shortest-path routing; null for
+                # a failed run. Not yet the srpaths.json format.
                 waypoints = row.waypoints,
             ),
             events    = events,
@@ -245,12 +314,12 @@ begin
     end
 end
 
-# ╔═╡ b0000000-0000-4000-8000-000000000014
+# ╔═╡ c0000000-0000-4000-8000-000000000014
 let
     # One run directory per sweep; each instance's file lands here the moment it finishes,
     # so cancelling the notebook keeps whatever already completed.
     timestamp = Dates.format(now(), "yyyy-mm-ddTHH-MM")
-    runDir    = joinpath(t0ResultsDir, timestamp)
+    runDir    = joinpath(t1ResultsDir, timestamp)
     mkpath(runDir)
     @progress for instanceName in get_instanceNames_from_dir(dataDir)
         events = NamedTuple[]
@@ -732,30 +801,37 @@ version = "5.15.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─b0000000-0000-4000-8000-000000000001
-# ╠═b0000000-0000-4000-8000-000000000002
-# ╠═b0000000-0000-4000-8000-00000000000b
-# ╠═b0000000-0000-4000-8000-00000000000c
-# ╠═b0000000-0000-4000-8000-000000000003
-# ╟─b0000000-0000-4000-8000-000000000004
-# ╠═b0000000-0000-4000-8000-000000000005
-# ╟─b0000000-0000-4000-8000-000000000006
-# ╠═b0000000-0000-4000-8000-00000000000d
-# ╠═b0000000-0000-4000-8000-00000000000e
-# ╠═b0000000-0000-4000-8000-000000000007
-# ╠═b0000000-0000-4000-8000-00000000000f
-# ╠═b0000000-0000-4000-8000-000000000010
-# ╟─b0000000-0000-4000-8000-000000000008
-# ╠═b0000000-0000-4000-8000-000000000009
-# ╠═b0000000-0000-4000-8000-00000000001a
-# ╠═b0000000-0000-4000-8000-00000000000a
-# ╟─b0000000-0000-4000-8000-000000000011
-# ╠═b0000000-0000-4000-8000-000000000012
-# ╠═b0000000-0000-4000-8000-000000000019
-# ╠═b0000000-0000-4000-8000-000000000013
-# ╟─b0000000-0000-4000-8000-000000000015
-# ╠═b0000000-0000-4000-8000-000000000016
-# ╠═b0000000-0000-4000-8000-000000000017
-# ╠═b0000000-0000-4000-8000-000000000014
+# ╠═c0000000-0000-4000-8000-000000000002
+# ╟─c0000000-0000-4000-8000-000000000001
+# ╠═c0000000-0000-4000-8000-00000000000b
+# ╠═c0000000-0000-4000-8000-00000000000c
+# ╠═c0000000-0000-4000-8000-000000000024
+# ╠═c0000000-0000-4000-8000-000000000003
+# ╠═c0000000-0000-4000-8000-000000000005
+# ╠═c0000000-0000-4000-8000-000000000020
+# ╠═c0000000-0000-4000-8000-000000000021
+# ╠═c0000000-0000-4000-8000-000000000022
+# ╟─c0000000-0000-4000-8000-000000000023
+# ╟─c0000000-0000-4000-8000-000000000006
+# ╠═c0000000-0000-4000-8000-00000000000d
+# ╠═c0000000-0000-4000-8000-00000000000e
+# ╠═c0000000-0000-4000-8000-000000000025
+# ╠═c0000000-0000-4000-8000-000000000007
+# ╠═c0000000-0000-4000-8000-00000000000f
+# ╠═c0000000-0000-4000-8000-000000000010
+# ╠═c0000000-0000-4000-8000-000000000026
+# ╟─c0000000-0000-4000-8000-000000000008
+# ╠═c0000000-0000-4000-8000-000000000009
+# ╠═c0000000-0000-4000-8000-00000000001a
+# ╠═c0000000-0000-4000-8000-00000000000a
+# ╠═c0000000-0000-4000-8000-000000000027
+# ╟─c0000000-0000-4000-8000-000000000011
+# ╠═c0000000-0000-4000-8000-000000000012
+# ╠═c0000000-0000-4000-8000-000000000019
+# ╠═c0000000-0000-4000-8000-000000000013
+# ╟─c0000000-0000-4000-8000-000000000015
+# ╠═c0000000-0000-4000-8000-000000000016
+# ╠═c0000000-0000-4000-8000-000000000017
+# ╠═c0000000-0000-4000-8000-000000000014
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
