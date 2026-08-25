@@ -7,6 +7,7 @@ using InteractiveUtils
 # ╔═╡ b0000000-0000-4000-8000-000000000002
 begin
     using JSON3
+    using Dates
     using Graphs
     using JuMP
     using HiGHS
@@ -27,16 +28,21 @@ md"""
 # Step 1 — Load the network graph
 """
 
-# ╔═╡ b0000000-0000-4000-8000-000000000003
-begin
-    net_file = joinpath(@__DIR__, "data", "setA-01-net.json")
-    json = JSON3.read(read(net_file, String))
+# ╔═╡ b0000000-0000-4000-8000-00000000000b
+dataDir = joinpath(@__DIR__, "data")
 
+# ╔═╡ b0000000-0000-4000-8000-00000000000c
+# Load and validate the network graph from one instance's -net.json.
+function get_graph_from_instance(dataDir, instanceName)
+    net_file = joinpath(dataDir, "$instanceName-net.json")
+    json = JSON3.read(read(net_file, String))
     is_jsonData_valid(json) ||
         error("Invalid network JSON: $net_file")
-
-    graph = get_graph_from_json(json)
+    return get_graph_from_json(json)
 end
+
+# ╔═╡ b0000000-0000-4000-8000-000000000003
+graph = get_graph_from_instance(dataDir, "setA-01")
 
 # ╔═╡ b0000000-0000-4000-8000-000000000004
 md"""
@@ -55,25 +61,35 @@ capacities `c(a)` from the net (Step 1), the split coefficients `r` (Step 2),
 the demands `φ(d, t)` from the traffic matrix, and `maxSeg` from the scenario.
 """
 
-# ╔═╡ b0000000-0000-4000-8000-000000000007
-begin
-    # c(a): capacity of every arc, read from the graph's edge data.
-    capacities = get_capacities_by_graph(graph)
-
-    # φ(d, t): demand volumes, from the traffic matrix.
-    tm_file = joinpath(@__DIR__, "data", "setA-01-tm.json")
+# ╔═╡ b0000000-0000-4000-8000-00000000000d
+# φ(d, t): demand volumes, loaded and validated from one instance's -tm.json.
+function get_demands_from_instance(dataDir, instanceName, graph)
+    tm_file = joinpath(dataDir, "$instanceName-tm.json")
     tm = JSON3.read(read(tm_file, String))
     is_tmData_valid(tm) ||
         error("Invalid traffic-matrix JSON: $tm_file")
-    demands = get_demands_from_json(tm, graph)
+    return get_demands_from_json(tm, graph)
+end
 
-    # maxSeg: from the scenario.
-    scenario_file = joinpath(@__DIR__, "data", "setA-01-scenario.json")
+# ╔═╡ b0000000-0000-4000-8000-00000000000e
+# maxSeg: loaded and validated from one instance's -scenario.json.
+function get_maxSegments_from_instance(dataDir, instanceName)
+    scenario_file = joinpath(dataDir, "$instanceName-scenario.json")
     scenario = JSON3.read(read(scenario_file, String))
     is_scenarioData_valid(scenario) ||
         error("Invalid scenario JSON: $scenario_file")
-    maxSeg = get_maxSegments_from_json(scenario)
+    return get_maxSegments_from_json(scenario)
 end
+
+# ╔═╡ b0000000-0000-4000-8000-000000000007
+# c(a): capacity of every arc, read from the graph's edge data.
+capacities = get_capacities_by_graph(graph)
+
+# ╔═╡ b0000000-0000-4000-8000-00000000000f
+demands = get_demands_from_instance(dataDir, "setA-01", graph)
+
+# ╔═╡ b0000000-0000-4000-8000-000000000010
+maxSeg = get_maxSegments_from_instance(dataDir, "setA-01")
 
 # ╔═╡ b0000000-0000-4000-8000-000000000008
 md"""
@@ -85,7 +101,7 @@ conservation, the `maxSeg` cap, and the per-arc load constraint.
 """
 
 # ╔═╡ b0000000-0000-4000-8000-000000000009
-solution = get_solution_by_graph(graph, r, demands, capacities, maxSeg)
+solution = get_solution_by_graph(graph, r, demands, capacities, maxSeg; timeLimitSec = 900)
 
 # ╔═╡ b0000000-0000-4000-8000-00000000000a
 (
@@ -95,9 +111,117 @@ solution = get_solution_by_graph(graph, r, demands, capacities, maxSeg)
     cpuTime = solution.cpuTime,
 )
 
+# ╔═╡ b0000000-0000-4000-8000-000000000011
+md"""
+# Step 5 — Numerical experiments on all setA instances
+
+Run the period-0 pipeline over every instance found in `data/` (900 s solve limit
+each) and tabulate vertices, links, demands, and the solve outcome (MLU, gap,
+status, CPU time). Every stage reuses the same functions as the single-instance
+walkthrough above — nothing is duplicated.
+"""
+
+# ╔═╡ b0000000-0000-4000-8000-000000000012
+# Instance stems (e.g. "setA-01") discovered from the -net.json files in `data/`.
+get_instanceNames_from_dir(dataDir) =
+    sort([replace(f, "-net.json" => "")
+          for f in readdir(dataDir) if endswith(f, "-net.json")])
+
+# ╔═╡ b0000000-0000-4000-8000-000000000013
+# One result row for a single instance: run the whole period-0 pipeline and return
+# its graph metadata plus the solve outcome.
+function get_experimentRow_from_instance(dataDir, instanceName; timeLimitSec = 900)
+    graph      = get_graph_from_instance(dataDir, instanceName)
+    r          = get_splitCoefficients_by_graph(graph)
+    capacities = get_capacities_by_graph(graph)
+    demands    = get_demands_from_instance(dataDir, instanceName, graph)
+    maxSeg     = get_maxSegments_from_instance(dataDir, instanceName)
+    solution   = get_solution_by_graph(graph, r, demands, capacities, maxSeg; timeLimitSec)
+    return (
+        instance = instanceName,
+        vertices = nv(graph.graph),
+        links    = ne(graph.graph),
+        demands  = length(demands),
+        status   = solution.status,
+        mlu      = solution.mlu,
+        gap      = solution.gap,
+        cpuTime  = solution.cpuTime,
+    )
+end
+
+# ╔═╡ b0000000-0000-4000-8000-000000000014
+results = [
+    try
+        get_experimentRow_from_instance(dataDir, instanceName)
+    catch err
+        # Keep one bad instance from aborting the whole sweep: log it and emit a
+        # same-schema row so `results` stays a clean table (missing metrics,
+        # status = :error as the sentinel).
+        @warn "Experiment failed for instance" instanceName exception = (err, catch_backtrace())
+        (
+            instance = instanceName,
+            vertices = missing,
+            links    = missing,
+            demands  = missing,
+            status   = :error,
+            mlu      = missing,
+            gap      = missing,
+            cpuTime  = missing,
+        )
+    end
+    for instanceName in get_instanceNames_from_dir(dataDir)
+]
+
+# ╔═╡ b0000000-0000-4000-8000-000000000015
+md"""
+## Persist the results
+
+Write the experiment table to `t0_results/<timestamp>.json` — one entry per
+instance with its name, whether the run succeeded, and the solve metrics. This is
+the write-side mirror of the `get_*_from_instance` readers.
+"""
+
+# ╔═╡ b0000000-0000-4000-8000-000000000016
+t0ResultsDir = joinpath(@__DIR__, "t0_results")
+
+# ╔═╡ b0000000-0000-4000-8000-000000000017
+# Persist the Step 5 results table to t0_results/<timestamp>.json. Each entry keeps
+# the instance name, a `succeeded` flag (false for the rows the try/catch turned
+# into :error), and the solve metrics. JSON has no Inf and no native enum, so a
+# non-finite mlu is written as null and the solver status as its name string.
+function save_results_to_json(results, t0ResultsDir)
+    mkpath(t0ResultsDir)
+    doc = [
+        (
+            instance  = row.instance,
+            succeeded = row.status !== :error,
+            results   = (
+                vertices = row.vertices,
+                links    = row.links,
+                demands  = row.demands,
+                status   = string(row.status),
+                mlu      = (row.mlu === missing || isfinite(row.mlu)) ? row.mlu : nothing,
+                gap      = row.gap,
+                cpuTime  = row.cpuTime,
+            ),
+        )
+        for row in results
+    ]
+    timestamp = Dates.format(now(), "yyyy-mm-ddTHH-MM")
+    filepath  = joinpath(t0ResultsDir, "$timestamp.json")
+    open(filepath, "w") do io
+        JSON3.pretty(io, JSON3.write(doc))
+    end
+    return filepath
+end
+
+# ╔═╡ b0000000-0000-4000-8000-000000000018
+save_results_to_json(results, t0ResultsDir)
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
@@ -545,13 +669,27 @@ version = "5.15.0+0"
 # ╔═╡ Cell order:
 # ╟─b0000000-0000-4000-8000-000000000001
 # ╠═b0000000-0000-4000-8000-000000000002
+# ╠═b0000000-0000-4000-8000-00000000000b
+# ╠═b0000000-0000-4000-8000-00000000000c
 # ╠═b0000000-0000-4000-8000-000000000003
 # ╟─b0000000-0000-4000-8000-000000000004
 # ╠═b0000000-0000-4000-8000-000000000005
 # ╟─b0000000-0000-4000-8000-000000000006
+# ╠═b0000000-0000-4000-8000-00000000000d
+# ╠═b0000000-0000-4000-8000-00000000000e
 # ╠═b0000000-0000-4000-8000-000000000007
+# ╠═b0000000-0000-4000-8000-00000000000f
+# ╠═b0000000-0000-4000-8000-000000000010
 # ╟─b0000000-0000-4000-8000-000000000008
 # ╠═b0000000-0000-4000-8000-000000000009
 # ╠═b0000000-0000-4000-8000-00000000000a
+# ╟─b0000000-0000-4000-8000-000000000011
+# ╠═b0000000-0000-4000-8000-000000000012
+# ╠═b0000000-0000-4000-8000-000000000013
+# ╠═b0000000-0000-4000-8000-000000000014
+# ╟─b0000000-0000-4000-8000-000000000015
+# ╠═b0000000-0000-4000-8000-000000000016
+# ╠═b0000000-0000-4000-8000-000000000017
+# ╠═b0000000-0000-4000-8000-000000000018
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
