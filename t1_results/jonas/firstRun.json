@@ -1,0 +1,224 @@
+{
+    "version": "2.0.0",
+    "instance": "01",
+    "succeeded": true,
+    "results": {
+        "vertices": 20,
+        "links": 80,
+        "demands": 40,
+        "status": "OPTIMAL",
+        "mlu": 0.929383899821109,
+        "lowerBound": 0.929383899821109,
+        "gap": 0,
+        "cpuTime": 31.375805139541626,
+        "maxrss": 1503879168,
+        "waypoints": {
+            "0": [
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ]
+            ],
+            "1": [
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ],
+                [
+                ]
+            ]
+        }
+    },
+    "events": [
+        {
+            "time": "2026-08-26T14-09-57",
+            "level": "info",
+            "message": "loading instance data"
+        },
+        {
+            "time": "2026-08-26T14-09-57",
+            "level": "info",
+            "message": "period-0 graph calculated"
+        },
+        {
+            "time": "2026-08-26T14-09-58",
+            "level": "info",
+            "message": "period-1 graph calculated"
+        },
+        {
+            "time": "2026-08-26T14-09-58",
+            "level": "info",
+            "message": "parameters built"
+        },
+        {
+            "time": "2026-08-26T14-09-58",
+            "level": "info",
+            "message": "building model"
+        },
+        {
+            "time": "2026-08-26T14-10-02",
+            "level": "info",
+            "message": "solving model"
+        },
+        {
+            "time": "2026-08-26T14-10-34",
+            "level": "info",
+            "message": "model solved"
+        },
+        {
+            "time": "2026-08-26T14-10-34",
+            "level": "info",
+            "message": "waypoints decoded"
+        }
+    ]
+}
