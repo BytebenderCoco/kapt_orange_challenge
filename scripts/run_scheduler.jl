@@ -1,6 +1,6 @@
 # RAM-aware work-queue scheduler for the t0 experiments.
 #
-# Replaces the barrier "waves" of run_parallel.sh: instead of launching a fixed
+# Replaces the barrier "waves" of the old wave launcher: instead of launching a fixed
 # number of processes, waiting for ALL of them, then launching the next wave, it
 # starts the next instance as soon as a running process finishes (a slot frees).
 # Admission is gated by two budgets, whichever is tighter:
@@ -38,7 +38,7 @@ using Dates
 #            + ramBytesPerNonzero  * nnz
 #
 # TODO(calibrate): fit these against the real peak RSS printed by
-# solve_instance.jl (Sys.maxrss) on a few representative instances before
+# t0_solve_instance.jl (Sys.maxrss) on a few representative instances before
 # trusting the scheduler on a new machine. Current values are rough defaults.
 # ---------------------------------------------------------------------------
 const ramBaseBytes         = 900 * 1024^2   # Julia runtime + HiGHS overhead (measured ~0.9 GiB on im-kigs)
@@ -92,11 +92,11 @@ function get_instances_from_dataDir(dataDir)
 end
 
 # Launch one solve as a detached subprocess, its output discarded (matches the
-# old run_parallel.sh: logs are not kept). Returns the running Process.
+# t0_execution.sh: logs are not kept). Returns the running Process.
 function launch_instance(juliaBin, name, resultsDir, dataDir, timeLimit, maxLevels)
-    script = joinpath(REPO_ROOT, "scripts", "solve_instance.jl")
+    script = joinpath(REPO_ROOT, "scripts", "t0_solve_instance.jl")
     cmd = `$juliaBin --project=$REPO_ROOT $script $name --output $resultsDir --data-dir $dataDir --time-limit $timeLimit`
-    # Only forward --max-levels when set, so an unset MAX_LEVELS keeps solve_instance.jl's default.
+    # Only forward --max-levels when set, so an unset MAX_LEVELS keeps t0_solve_instance.jl's default.
     isempty(maxLevels) || (cmd = `$cmd --max-levels $maxLevels`)
     return run(pipeline(cmd; stdout = devnull, stderr = devnull); wait = false)
 end

@@ -107,7 +107,7 @@ Instances are queued largest-estimate-first so heavy instances start early and
 small ones backfill the leftover budget.
 
 > The RAM-estimate constants in `run_scheduler.jl` are rough defaults. Calibrate
-> them once per machine against the `maxrss` (peak RSS) that `solve_instance.jl`
+> them once per machine against the `maxrss` (peak RSS) that `t0_solve_instance.jl`
 > now prints.
 
 ### Monitor and pull results incrementally
@@ -130,9 +130,9 @@ writes `t0_results/<runId>/summary.csv`.
 
 ### Scripts
 
-- `scripts/solve_instance.jl` — solve one instance, write one result JSON (+ peak RSS).
+- `scripts/t0_solve_instance.jl` — solve one instance, write one result JSON (+ peak RSS).
 - `scripts/run_scheduler.jl` — RAM-aware work-queue scheduler (budgets: `MAX_RAM_GB`, `MAX_PROCS`).
-- `scripts/run_parallel.sh` — thin wrapper: instantiate the env, then run the scheduler.
+- `scripts/t0_execution.sh` — thin wrapper: instantiate the env, then run the scheduler.
 - `scripts/run_on_server.sh` — non-blocking launcher (`nohup` or `tmux`).
 - `scripts/collect_results.jl` — aggregate per-instance JSONs into `summary.csv`.
 

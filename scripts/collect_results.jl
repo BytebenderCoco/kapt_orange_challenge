@@ -57,7 +57,7 @@ end
 
 function main()
     runId = isempty(ARGS) ? get_latest_runId(joinpath(REPO_ROOT, "t0_results")) : ARGS[1]
-    runId === nothing && error("No runs found under t0_results/. Run run_parallel.sh first.")
+    runId === nothing && error("No runs found under t0_results/. Run t0_execution.sh first.")
 
     resultsDir = joinpath(REPO_ROOT, "t0_results", runId)
     outPath    = joinpath(resultsDir, "summary.csv")

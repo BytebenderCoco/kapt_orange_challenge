@@ -211,7 +211,7 @@ recording each pipeline step (and any failure).
 
 The document shape and the write itself live in the shared `Result` module — the same
 `get_resultDoc_by_experimentRow` / `save_resultDoc_to_json` used by the headless
-`scripts/solve_instance.jl`, so both paths emit one schema. This is the write-side
+`scripts/t0_solve_instance.jl`, so both paths emit one schema. This is the write-side
 mirror of the `get_*_from_instance` readers.
 """
 
