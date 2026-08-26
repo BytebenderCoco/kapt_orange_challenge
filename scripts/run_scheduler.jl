@@ -1,25 +1,14 @@
-# RAM-aware work-queue scheduler for the t0 experiments.
+# Parallel launcher for the t0 experiments.
 #
-# Replaces the barrier "waves" of the old wave launcher: instead of launching a fixed
-# number of processes, waiting for ALL of them, then launching the next wave, it
-# starts the next instance as soon as a running process finishes (a slot frees).
-# Admission is gated by two budgets, whichever is tighter:
-#
-#   * MAX_RAM_GB  (required) — total memory budget. Each instance gets a static
-#     peak-RAM estimate (linear in the model size, see
-#     get_ramEstimateBytes_by_modelSize) and a new instance is only started when
-#     sum(running estimates) + estimate(next) fits under the budget.
-#   * MAX_PROCS   (default: detected logical cores) — CPU ceiling, so many tiny
-#     instances don't oversubscribe the cores.
-#
-# Instances are queued largest-estimate-first so the heavy instances start early
-# while the small ones backfill the leftover budget.
+# Hardcoded to solve the first 10 setA instances (setA-01..10 by sorted name),
+# one Julia process each, all started at once — no RAM budgeting and no admission
+# gating. Each instance's result lands in t0_results/<RUN_ID>/ as it finishes, so a
+# cancelled run keeps whatever already completed.
 #
 # Env overrides:
-#   MAX_RAM_GB  required, fixed RAM budget in GiB
-#   MAX_PROCS   max concurrent solves (default: Sys.CPU_THREADS)
 #   RUN_ID      run id (default: local time stamp)
 #   TIME_LIMIT  per-instance solver time limit in seconds (default: 900)
+#   MAX_LEVELS  lex-descent depth per instance (default: t0_solve_instance.jl's 8)
 #   DATA_DIR    directory holding the -net/-tm/-scenario.json files
 #   JULIA       path to the julia binary (default: `julia` on PATH)
 
@@ -28,57 +17,25 @@ const REPO_ROOT = normpath(joinpath(@__DIR__, ".."))
 using Pkg
 Pkg.activate(REPO_ROOT; io = devnull)
 
-using JSON3
 using Dates
 
-# ---------------------------------------------------------------------------
-# RAM-estimate calibration constants (linear model, bytes):
-#   estimate = ramBaseBytes
-#            + ramBytesPerVariable * nVars
-#            + ramBytesPerNonzero  * nnz
-#
-# TODO(calibrate): fit these against the real peak RSS printed by
-# t0_solve_instance.jl (Sys.maxrss) on a few representative instances before
-# trusting the scheduler on a new machine. Current values are rough defaults.
-# ---------------------------------------------------------------------------
-const ramBaseBytes         = 900 * 1024^2   # Julia runtime + HiGHS overhead (measured ~0.9 GiB on im-kigs)
-const ramBytesPerVariable  = 200.0          # per binary variable (JuMP + HiGHS col)
-const ramBytesPerNonzero   = 24.0           # per constraint-matrix nonzero (row+col)
+# Number of leading instances (setA-01..10) to solve, all in parallel.
+const instanceCount = 10
 
-# Model-size proxy for one instance: the vertex/link/demand counts read from the
-# JSON files, plus the two quantities that drive solver memory:
-#   nVars = D * n * (n - 1)          # x^{d,0}_{ij} binary variables (i != j)
-#   nnz   = m * nVars                # nonzeros in the load-bound block (dominant)
-function get_modelSize_from_instance(dataDir, instanceName)
-    net = JSON3.read(read(joinpath(dataDir, "$instanceName-net.json"), String))
-    tm  = JSON3.read(read(joinpath(dataDir, "$instanceName-tm.json"), String))
-    n = length(net.nodes)
-    m = length(net.links)
-    demands = length(tm.demands)
-    nVars = demands * n * (n - 1)
-    return (
-        vertices = n,
-        links    = m,
-        demands  = demands,
-        nVars    = nVars,
-        nnz      = m * nVars,
-    )
-end
+# Per-instance HiGHS thread allocation (hardcoded here, not an env knob), tiered by
+# model size: the small instances (setA-01..05) solve fast on one core, so the freed
+# cores go to the big MILPs where HiGHS's (sublinear) parallel branch-and-bound
+# actually helps. All 10 run at once, so the total is the sum below (≈31 cores).
+# Instances not listed fall back to defaultSolverThreads.
+const solverThreadsByInstance = Dict(
+    "setA-06" => 4, "setA-08" => 4, "setA-09" => 4,   # ~4.5–5.0M x-vars
+    "setA-07" => 6,                                    # 7.9M x-vars
+    "setA-10" => 8,                                    # 22.4M x-vars
+)
+const defaultSolverThreads = 1
 
-# Static peak-RAM estimate (bytes) for the period-0 HiGHS solve, derived from an
-# already-computed model size.
-function get_ramEstimateBytes_by_modelSize(size)
-    return ramBaseBytes +
-           ramBytesPerVariable * size.nVars +
-           ramBytesPerNonzero * size.nnz
-end
-
-# Fixed RAM budget in bytes, read from the required MAX_RAM_GB env var (GiB).
-function get_ramBudgetBytes()
-    value = get(ENV, "MAX_RAM_GB", "")
-    isempty(value) && error("MAX_RAM_GB is required (fixed RAM budget in GiB).")
-    return parse(Float64, value) * 1024^3
-end
+# HiGHS threads for one instance's solve, from the size-tiered map above.
+get_solverThreads_by_instance(name) = get(solverThreadsByInstance, name, defaultSolverThreads)
 
 # Discover instance stems (e.g. "setA-01") from the -net.json files in dataDir.
 function get_instances_from_dataDir(dataDir)
@@ -91,93 +48,55 @@ function get_instances_from_dataDir(dataDir)
     return instances
 end
 
-# Launch one solve as a detached subprocess, its output discarded (matches the
-# t0_execution.sh: logs are not kept). Returns the running Process.
+# Launch one solve as a detached subprocess, its output discarded (logs are not
+# kept). Returns the running Process.
 function launch_instance(juliaBin, name, resultsDir, dataDir, timeLimit, maxLevels)
     script = joinpath(REPO_ROOT, "scripts", "t0_solve_instance.jl")
-    cmd = `$juliaBin --project=$REPO_ROOT $script $name --output $resultsDir --data-dir $dataDir --time-limit $timeLimit`
+    threads = get_solverThreads_by_instance(name)
+    cmd = `$juliaBin --project=$REPO_ROOT $script $name --output $resultsDir --data-dir $dataDir --time-limit $timeLimit --threads $threads`
     # Only forward --max-levels when set, so an unset MAX_LEVELS keeps t0_solve_instance.jl's default.
     isempty(maxLevels) || (cmd = `$cmd --max-levels $maxLevels`)
     return run(pipeline(cmd; stdout = devnull, stderr = devnull); wait = false)
 end
 
 function main()
-    dataDir      = get(ENV, "DATA_DIR", joinpath(REPO_ROOT, "data"))
-    runId        = get(ENV, "RUN_ID", Dates.format(now(), "yyyymmdd-HHMMSS"))
-    resultsDir   = joinpath(REPO_ROOT, "t0_results", runId)
-    timeLimit    = get(ENV, "TIME_LIMIT", "900")
-    maxLevels    = get(ENV, "MAX_LEVELS", "")
-    juliaBin     = get(ENV, "JULIA", "julia")
-    maxProcs     = begin
-        value = get(ENV, "MAX_PROCS", "")
-        isempty(value) ? Sys.CPU_THREADS : parse(Int, value)
-    end
-    ramBudgetBytes = get_ramBudgetBytes()
+    dataDir    = get(ENV, "DATA_DIR", joinpath(REPO_ROOT, "data"))
+    runId      = get(ENV, "RUN_ID", Dates.format(now(), "yyyymmdd-HHMMSS"))
+    resultsDir = joinpath(REPO_ROOT, "t0_results", runId)
+    timeLimit  = get(ENV, "TIME_LIMIT", "900")
+    maxLevels  = get(ENV, "MAX_LEVELS", "")
+    juliaBin   = get(ENV, "JULIA", "julia")
 
     mkpath(resultsDir)
 
-    # Per-instance RAM estimate, queued largest-first.
-    instances = [(name = name,
-                  estBytes = get_ramEstimateBytes_by_modelSize(
-                      get_modelSize_from_instance(dataDir, name)))
-                 for name in get_instances_from_dataDir(dataDir)]
-    sort!(instances; by = item -> item.estBytes, rev = true)
+    # Hardcoded to the first `instanceCount` instances, all launched in parallel.
+    instances = get_instances_from_dataDir(dataDir)
+    instances = instances[1:min(instanceCount, length(instances))]
 
-    println("runId=$runId maxProcs=$maxProcs ramBudget=$(round(ramBudgetBytes / 2^30; digits = 1))GiB timeLimit=$(timeLimit)s maxLevels=$(isempty(maxLevels) ? "default" : maxLevels)")
+    println("runId=$runId instances=$(length(instances)) (parallel) timeLimit=$(timeLimit)s maxLevels=$(isempty(maxLevels) ? "default" : maxLevels)")
     println("resultsDir=$resultsDir")
-    for item in instances
-        println("  $(item.name): est $(round(item.estBytes / 2^30; digits = 2)) GiB")
+    for name in instances
+        println("  $name (threads $(get_solverThreads_by_instance(name)))")
     end
     flush(stdout)
 
-    # Work queue: one entry per running process (name -> estimate), plus a channel
-    # that receives a message whenever any process finishes.
-    runningEst = Dict{String, Float64}()
-    sumRunning = 0.0
-    doneChannel = Channel{Any}(32)
+    # Launch every instance at once; a per-process @async task reports its completion
+    # through the channel so we can count finishes and failures as they arrive.
+    doneChannel = Channel{Any}(length(instances))
+    for name in instances
+        proc = launch_instance(juliaBin, name, resultsDir, dataDir, timeLimit, maxLevels)
+        @async begin
+            wait(proc)
+            put!(doneChannel, (name = name, ok = success(proc)))
+        end
+        println("start $name")
+        flush(stdout)
+    end
 
     failures = 0
-    finished = 0
-    i = 1
-    n = length(instances)
-
-    while i <= n || !isempty(runningEst)
-        # Start as many queued instances as both budgets allow.
-        while i <= n
-            name     = instances[i].name
-            estBytes = instances[i].estBytes
-
-            length(runningEst) >= maxProcs && break
-            if !isempty(runningEst) && sumRunning + estBytes > ramBudgetBytes
-                break
-            end
-            if isempty(runningEst) && estBytes > ramBudgetBytes
-                @warn "skipping $name: estimate $(round(estBytes / 2^30; digits = 1)) GiB exceeds the $(round(ramBudgetBytes / 2^30; digits = 1)) GiB budget"
-                flush(stderr)
-                failures += 1
-                i += 1
-                continue
-            end
-
-            proc = launch_instance(juliaBin, name, resultsDir, dataDir, timeLimit, maxLevels)
-            runningEst[name] = estBytes
-            sumRunning += estBytes
-            @async begin
-                wait(proc)
-                put!(doneChannel, (name = name, estBytes = estBytes, ok = success(proc)))
-            end
-            println("start $name (est $(round(estBytes / 2^30; digits = 2)) GiB, running $(length(runningEst)))")
-            flush(stdout)
-            i += 1
-        end
-
-        isempty(runningEst) && break
-
+    for k in 1:length(instances)
         done = take!(doneChannel)
-        delete!(runningEst, done.name)
-        sumRunning -= done.estBytes
-        finished += 1
-        println("done $(done.name)$(done.ok ? "" : " (failed)") ($finished/$n)")
+        println("done $(done.name)$(done.ok ? "" : " (failed)") ($k/$(length(instances)))")
         flush(stdout)
         if !done.ok
             failures += 1

@@ -18,7 +18,7 @@
 # Usage:
 #   julia --project=. scripts/t1_solve_instance.jl <instanceName> \
 #       [--output <resultsDir>] [--data-dir <dataDir>] [--time-limit <sec>] \
-#       [--max-levels <k>]
+#       [--max-levels <k>] [--threads <n>]
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, ".."))
 
@@ -51,6 +51,7 @@ function parse_args(args)
     dataDir      = joinpath(REPO_ROOT, "data")
     timeLimitSec = 1800
     maxLevels    = 3
+    threads      = 1
     positional   = String[]
 
     # Return the value following a `--flag`, erroring clearly if it is missing
@@ -75,6 +76,9 @@ function parse_args(args)
         elseif arg == "--max-levels"
             maxLevels = parse(Int, option_value(arg, i))
             i += 2
+        elseif arg == "--threads"
+            threads = parse(Int, option_value(arg, i))
+            i += 2
         elseif startswith(arg, "--")
             error("Unknown option: $arg")
         else
@@ -84,10 +88,11 @@ function parse_args(args)
     end
 
     isempty(positional) && error(
-        "Usage: t1_solve_instance.jl <instanceName> [--output <dir>] [--data-dir <dir>] [--time-limit <sec>] [--max-levels <k>]"
+        "Usage: t1_solve_instance.jl <instanceName> [--output <dir>] [--data-dir <dir>] [--time-limit <sec>] [--max-levels <k>] [--threads <n>]"
     )
 
     maxLevels >= 1 || error("--max-levels must be >= 1 (1 = MLU only).")
+    threads >= 1 || error("--threads must be >= 1.")
 
     return (
         instanceName = positional[1],
@@ -95,6 +100,7 @@ function parse_args(args)
         dataDir      = dataDir,
         timeLimitSec = timeLimitSec,
         maxLevels    = maxLevels,
+        threads      = threads,
     )
 end
 
@@ -144,7 +150,7 @@ end
 # and G₁, recompute r₀/r₁, assemble + solve the budgeted two-period model), recording
 # each step into `events`. Mirrors the notebook's get_experimentRow_from_instance so
 # both paths produce the same experimentRow (and, through Result, the same v2 document).
-function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 1800, maxLevels = 3)
+function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 1800, maxLevels = 3, threads = 1)
     record_event!(events, "loading instance data")
     graph         = get_graph_from_instance(dataDir, instanceName)
     record_event!(events, "period-0 graph calculated")
@@ -166,7 +172,7 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     n             = nv(graph.graph)
     periods       = 0:1
     periodInputs  = Dict(0 => (graph = graph, r = r), 1 => (graph = graph1, r = r1))
-    builder       = AsrModelBuilder(; timeLimitSec)
+    builder       = AsrModelBuilder(; timeLimitSec, threads)
     set_variables!(builder, demands, n, periods)
     set_flowConservation!(builder, demands, n, periods)
     set_segmentCap!(builder, demands, n, maxSeg, periods)
@@ -182,6 +188,9 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     # on shortest paths, or for the whole run if infeasible.
     waypoints     = get_waypoints_by_solvedModel(model, periodInputs, demands, periods)
     record_event!(events, "waypoints decoded")
+    # L: sorted per-arc utilizations across both periods at the final solution (spec objective 5).
+    loadVector    = get_loadVector_by_solvedModel(model, periodInputs)
+    record_event!(events, "load vector decoded")
     return (
         instance   = instanceName,
         vertices   = nv(graph.graph),
@@ -194,6 +203,7 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
         cpuTime    = solution.cpuTime,
         maxrss     = Sys.maxrss(),
         waypoints  = waypoints,
+        loadVector = loadVector,
         events     = events,
     )
 end
@@ -205,7 +215,7 @@ function main()
     row = try
         get_experimentRow_from_instance(
             args.dataDir, args.instanceName, events;
-            timeLimitSec = args.timeLimitSec, maxLevels = args.maxLevels
+            timeLimitSec = args.timeLimitSec, maxLevels = args.maxLevels, threads = args.threads
         )
     catch err
         # Emit a same-schema :error row so the saved file stays on-schema; the process
@@ -217,7 +227,7 @@ function main()
             vertices = missing, links = missing, demands = missing,
             status = :error,
             mlu = missing, lowerBound = missing, gap = missing, cpuTime = missing,
-            maxrss = Sys.maxrss(), waypoints = missing, events = events,
+            maxrss = Sys.maxrss(), waypoints = missing, loadVector = missing, events = events,
         )
     end
 
