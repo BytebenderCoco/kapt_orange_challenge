@@ -16,7 +16,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
 RESULTS_DIR="$REPO_ROOT/t0_results/$RUN_ID"
 # Single detached-run log, kept out of git (see .gitignore); per-instance logs
-# are discarded by run_parallel.sh.
+# are discarded by t0_execution.sh.
 LOGS_DIR="$REPO_ROOT/logs/$RUN_ID"
 
 # Locate julia: prefer the one on PATH, fall back to a juliaup install at
@@ -40,12 +40,12 @@ mkdir -p "$LOGS_DIR"
 if [ "$MODE" = "tmux" ]; then
     echo "==> launching in tmux session: orange-$RUN_ID"
     tmux new-session -d -s "orange-$RUN_ID" \
-        "cd '$REPO_ROOT' && RUN_ID='$RUN_ID' bash scripts/run_parallel.sh"
+        "cd '$REPO_ROOT' && RUN_ID='$RUN_ID' bash scripts/t0_execution.sh"
     echo "attach with: tmux attach -t orange-$RUN_ID"
 else
     RUN_LOG="$LOGS_DIR/run.log"
     echo "==> launching detached (nohup), runId=$RUN_ID"
-    nohup env RUN_ID="$RUN_ID" bash "$REPO_ROOT/scripts/run_parallel.sh" \
+    nohup env RUN_ID="$RUN_ID" bash "$REPO_ROOT/scripts/t0_execution.sh" \
         > "$RUN_LOG" 2>&1 &
     echo $! > "$LOGS_DIR/run.pid"
     echo "pid:  $(cat "$LOGS_DIR/run.pid")"

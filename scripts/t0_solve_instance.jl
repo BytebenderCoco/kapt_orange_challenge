@@ -1,7 +1,7 @@
 # Headless single-instance solver for the Orange ROADEF 2026 challenge (t0 model).
 #
 # Runs the period-0 pipeline for one setA instance and writes its result as one
-# JSON file. It is meant to be launched once per instance by run_parallel.sh, so
+# JSON file. It is meant to be launched once per instance by t0_execution.sh, so
 # many instances solve in parallel (one process each) and results land
 # incrementally as each instance finishes.
 #
@@ -10,7 +10,7 @@
 # `--max-levels` caps how many levels of that descent to run (depth ≥ 1; 1 = MLU only).
 #
 # Usage:
-#   julia --project=. scripts/solve_instance.jl <instanceName> \
+#   julia --project=. scripts/t0_solve_instance.jl <instanceName> \
 #       [--output <resultsDir>] [--data-dir <dataDir>] [--time-limit <sec>] \
 #       [--max-levels <k>]
 
@@ -78,7 +78,7 @@ function parse_args(args)
     end
 
     isempty(positional) && error(
-        "Usage: solve_instance.jl <instanceName> [--output <dir>] [--data-dir <dir>] [--time-limit <sec>] [--max-levels <k>]"
+        "Usage: t0_solve_instance.jl <instanceName> [--output <dir>] [--data-dir <dir>] [--time-limit <sec>] [--max-levels <k>]"
     )
 
     maxLevels >= 1 || error("--max-levels must be >= 1 (1 = MLU only).")
@@ -171,7 +171,7 @@ function main()
         )
     catch err
         # Emit a same-schema :error row so the saved file stays on-schema; the process
-        # exit code (below) also signals the failure to run_parallel.sh.
+        # exit code (below) also signals the failure to t0_execution.sh.
         record_event!(events, sprint(showerror, err); level = :error)
         @error "solve failed for instance" args.instanceName exception = (err, catch_backtrace())
         (
