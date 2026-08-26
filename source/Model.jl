@@ -260,6 +260,21 @@ function solve!(asrModel::AsrModel; maxLevels = 8, tol = 1e-6, deepGap = 0.05)
 
     cpuTime = 0.0
 
+    # Seed a MIP start with the trivial direct routing: each demand on its own
+    # shortest path, i.e. the single segment (source, target) and nothing else.
+    # This point is always feasible for period 0 (flow conservation holds, one
+    # segment ≤ maxSeg, and λ absorbs any load), so the solver holds an incumbent
+    # from the outset instead of hunting for a first feasible point across the
+    # millions of x binaries — without it, level 1 can exhaust the time limit at
+    # the root and return mlu = Inf. A segment fixed to 0 (unreachable in G_t) is
+    # left at 0: if that is a demand's direct segment the start is merely an
+    # infeasible hint the solver discards, never a conflict with the fix.
+    for (key, var) in asrModel.x.data
+        (demand, _, i, j) = key
+        onDirectSegment = i == demand.source && j == demand.target
+        set_start_value(var, (onDirectSegment && !is_fixed(var)) ? 1.0 : 0.0)
+    end
+
     # Level 1: the seeded `Min λ`. S₁ = the MLU.
     startTime = time()
     optimize!(model)
