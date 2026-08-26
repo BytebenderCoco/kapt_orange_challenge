@@ -31,13 +31,16 @@ const PLOTS_DIR  = joinpath(REPO_ROOT, "presentation", "assets", "plots")
 const DATA_DIR   = joinpath(REPO_ROOT, "data")
 const T0_DIR     = joinpath(REPO_ROOT, "t0_results")
 
-const STATUS_COLOR = Dict(
-    "OPTIMAL"     => "#2e7d32",
-    "TIME_LIMIT"  => "#ef6c00",
-    "error"       => "#b71c1c",
-    :OPTIMAL      => "#2e7d32",
-    :TIME_LIMIT   => "#ef6c00",
-)
+# Cartesian (warm-stone editorial) chart palette — ink primary series, dashed
+# taupe comparison, warm sandstone canvas. No vivid colors.
+const C_INK     = "#1A1A1A"   # primary series / text
+const C_GRAY    = "#5A5A5A"   # secondary text
+const C_TAUPE   = "#8A8178"   # axis ticks / labels
+const C_LINE    = "#B8B0A4"   # comparison series (dashed) / borders
+const C_STONE   = "#FFFFFF"   # canvas background
+const C_STONE2  = "#EDE8E0"   # grid lines
+
+const STATUS_FILL = Dict("OPTIMAL" => C_INK, "TIME_LIMIT" => C_LINE)
 
 # ---------------------------------------------------------------------------
 # Run selection
@@ -151,32 +154,39 @@ function make_benchmark_mlu(rows)
     rows = [r for r in rows if !r.multigraph]
     isempty(rows) && error("No non-multigraph instances in this run.")
     labels = ["setA-" * r.instance for r in rows]
-    # Bar height = MLU where a primal was found, else the lower bound (hollow).
+    # Bar height = MLU where a primal was found, else the lower bound (outline).
     heights = Float64[]
-    barColor = Symbol[]
+    fills   = String[]
     for r in rows
         y = r.mlu !== nothing ? r.mlu : r.lowerBound
         push!(heights, y === nothing ? 0.0 : y)
-        push!(barColor, r.status == "OPTIMAL" ? :OPTIMAL : :TIME_LIMIT)
+        push!(fills, r.status == "OPTIMAL" ? C_INK : C_LINE)
     end
-    colors = [STATUS_COLOR[c] for c in barColor]
+    outline = [c == C_LINE for c in fills]
 
     p = bar(labels, heights; label = "",
-        color = colors, legend = false, alpha = 0.85,
-        size = (900, 480), title = "Maximum Link Utilization (MLU) — nominal period t = 0",
+        color = fills, fillalpha = [o ? 0.0 : 0.9 for o in outline],
+        linecolor = fills, linewidth = 2, legend = false,
+        size = (900, 480), title = "Maximum link utilization — nominal period (t = 0)",
         xlabel = "instance", ylabel = "MLU  (λ*)",
-        xtickfontsize = 8, ytickfontsize = 9, titlefontsize = 13,
-        guidefontsize = 11, bottom_margin = 6Plots.mm)
+        background_color_inside = C_STONE,
+        foreground_color = C_INK,
+        titlefontsize = 15, titlefontfamily = "Palatino",
+        xtickfontsize = 9, ytickfontsize = 9,
+        guidefontsize = 12, guidefontfamily = "Palatino",
+        grid = true, gridcolor = C_STONE2, gridlinewidth = 1,
+        bottom_margin = 20Plots.mm, left_margin = 20Plots.mm,
+        top_margin = 6Plots.mm, right_margin = 6Plots.mm, framestyle = :box)
 
     for (i, r) in enumerate(rows)
         if r.mlu !== nothing
             ann = r.gap === nothing ? "" : (r.gap < 1e-4 ? "gap 0%" : "gap " * string(round(100 * r.gap, digits = 1)) * "%")
-            annotate!(p, i, heights[i], text(ann, 8, :top, :black))
+            annotate!(p, i, heights[i], text(ann, 9, :top, C_GRAY))
         else
-            annotate!(p, i, 0.0, text("TIME_LIMIT", 8, :bottom, :black, rotation = 0))
+            annotate!(p, i, heights[i] + 0.02, text("time limit", 9, :top, C_TAUPE))
         end
     end
-    ylims!(p, 0, (maximum(heights) * 1.25 + 0.02))
+    ylims!(p, 0, (maximum(heights) * 1.28 + 0.02))
     return p
 end
 
@@ -191,18 +201,26 @@ function make_solve_time(rows; timeLimitSec = 900)
     ys = [r.cpuTime === nothing ? 0.0 : r.cpuTime for r in rows]
     ok  = [r.status == "OPTIMAL" for r in rows]
 
-    p = scatter(xs[ok], ys[ok]; label = "OPTIMAL", color = STATUS_COLOR["OPTIMAL"],
-        markersize = 6, markerstrokewidth = 0)
-    scatter!(p, xs[.!ok], ys[.!ok]; label = "TIME_LIMIT",
-        color = STATUS_COLOR["TIME_LIMIT"], markersize = 6, markerstrokewidth = 0)
+    p = scatter(xs[ok], ys[ok]; label = "optimal",
+        color = C_INK, markersize = 7, markerstrokewidth = 0)
+    scatter!(p, xs[.!ok], ys[.!ok]; label = "time limit",
+        color = C_STONE, markercolor = C_LINE, markersize = 7, markerstrokewidth = 2)
     hline!(p, [timeLimitSec]; label = "time limit (900 s)",
-        line = (:black, :dash), linewidth = 1.2)
+        line = (C_GRAY, :dash), linewidth = 1.5)
 
     plot!(p; yscale = :log10, size = (900, 480),
         title = "Solve time vs instance size (log scale)",
         xlabel = "instance index", ylabel = "CPU time (s)",
-        xticks = xs, xtickfontsize = 8, ytickfontsize = 9,
-        titlefontsize = 13, guidefontsize = 11, legend = :topleft, legendfontsize = 9)
+        background_color_inside = C_STONE,
+        foreground_color = C_INK,
+        titlefontsize = 15, titlefontfamily = "Palatino",
+        xticks = xs, xtickfontsize = 9, ytickfontsize = 9,
+        guidefontsize = 12, guidefontfamily = "Palatino",
+        grid = true, gridcolor = C_STONE2, gridlinewidth = 1,
+        legend = :topleft, legendfontsize = 11,
+        framestyle = :box,
+        left_margin = 26Plots.mm, bottom_margin = 20Plots.mm,
+        top_margin = 6Plots.mm, right_margin = 6Plots.mm)
     return p
 end
 
@@ -218,20 +236,29 @@ function make_network_scale(scale)
     p = plot(size = (900, 480),
         title = "Set A instance scale (log scale)",
         xlabel = "instance", ylabel = "count",
+        background_color_inside = C_STONE,
+        foreground_color = C_INK,
+        titlefontsize = 15, titlefontfamily = "Palatino",
         xticks = (xs, labels), xtickfontsize = 7, ytickfontsize = 9,
-        titlefontsize = 13, guidefontsize = 11, legend = :topleft, legendfontsize = 9)
-    for (name, get, mk) in (("nodes", s -> s.nodes, :circle),
-                            ("arcs",  s -> s.links, :diamond),
-                            ("demands", s -> s.demands, :square))
+        guidefontsize = 12, guidefontfamily = "Palatino",
+        grid = true, gridcolor = C_STONE2, gridlinewidth = 1,
+        legend = :topleft, legendfontsize = 11,
+        framestyle = :box,
+        left_margin = 20Plots.mm, bottom_margin = 20Plots.mm,
+        top_margin = 6Plots.mm, right_margin = 6Plots.mm)
+    for (name, get, mk, col, ls) in (("nodes",   s -> s.nodes,   :circle, C_INK,  :solid),
+                                     ("arcs",    s -> s.links,   :diamond, C_GRAY, :solid),
+                                     ("demands", s -> s.demands, :square, C_TAUPE, :solid))
         plot!(p, xs[simple], [get(s) for s in scale[simple]];
-            label = name, linewidth = 2, marker = mk, markersize = 4)
+            label = name, linewidth = 2, linestyle = ls, color = col,
+            marker = mk, markersize = 4)
         plot!(p, xs[multi], [get(s) for s in scale[multi]];
-            label = "", linewidth = 1.5, linestyle = :dash, marker = mk,
-            markersize = 4, markerstrokewidth = 1, linealpha = 0.55,
-            markeralpha = 0.55, color = :gray)
+            label = "", linewidth = 1.5, linestyle = :dot, color = C_LINE,
+            marker = mk, markersize = 4, markerstrokewidth = 1,
+            markercolor = C_LINE, markeralpha = 0.7, linealpha = 0.7)
     end
-    plot!(p, [NaN], [NaN]; label = "multigraph (out of scope)", line = (:gray, :dash),
-        marker = :circle, markeralpha = 0.55, markercolor = :gray)
+    plot!(p, [NaN], [NaN]; label = "multigraph (out of scope)", line = (C_LINE, :dot),
+        marker = :circle, markeralpha = 0.7, markercolor = C_LINE)
     plot!(p; yscale = :log10)
     return p
 end
