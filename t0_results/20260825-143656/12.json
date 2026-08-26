@@ -1,0 +1,12 @@
+{
+    "instance": "setA-12",
+    "succeeded": false,
+    "vertices": null,
+    "links": null,
+    "demands": null,
+    "status": "error",
+    "mlu": null,
+    "lowerBound": null,
+    "gap": 0,
+    "cpuTime": 0
+}

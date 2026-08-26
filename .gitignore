@@ -1,0 +1,10 @@
+# OS junk
+.DS_Store
+*.swp
+*~
+
+# Transient process files
+*.pid
+
+# Detached-run logs (results under t0_results/ stay visible and committed)
+logs/
