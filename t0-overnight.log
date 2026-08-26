@@ -1,0 +1,340 @@
+nohup: ignoring input
+==> instantiating project environment...
+   Installed x265_jll ───────────────────── v4.1.0+0
+   Installed Opus_jll ───────────────────── v1.6.1+0
+   Installed GR_jll ─────────────────────── v0.73.27+0
+   Installed libdecor_jll ───────────────── v0.2.2+0
+   Installed JpegTurbo_jll ──────────────── v3.2.0+1
+   Installed Libmount_jll ───────────────── v2.42.0+0
+   Installed LERC_jll ───────────────────── v4.1.0+0
+   Installed libfdk_aac_jll ─────────────── v2.0.4+0
+   Installed Grisu ──────────────────────── v1.0.2
+   Installed Xorg_xcb_util_wm_jll ───────── v0.4.2+0
+   Installed InlineStrings ──────────────── v1.4.5
+   Installed Contour ────────────────────── v0.6.3
+   Installed GR ─────────────────────────── v0.73.27
+   Installed Xorg_xcb_util_image_jll ────── v0.4.1+0
+   Installed Xorg_xkbcomp_jll ───────────── v1.4.7+0
+   Installed RecipesPipeline ────────────── v0.6.12
+   Installed PlotUtils ──────────────────── v1.4.4
+   Installed InvertedIndices ────────────── v1.3.1
+   Installed Xorg_libSM_jll ─────────────── v1.2.6+0
+   Installed Cairo_jll ──────────────────── v1.18.7+0
+   Installed libva_jll ──────────────────── v2.23.0+0
+   Installed Xorg_xcb_util_jll ──────────── v0.4.1+0
+   Installed Fontconfig_jll ─────────────── v2.17.1+0
+   Installed DataFrames ─────────────────── v1.8.2
+   Installed Xorg_libxkbfile_jll ────────── v1.2.0+0
+   Installed Missings ───────────────────── v1.2.0
+   Installed Xorg_libXinerama_jll ───────── v1.1.7+0
+   Installed EpollShim_jll ──────────────── v0.0.20230411+1
+   Installed Xorg_libXau_jll ────────────── v1.0.13+0
+   Installed Pango_jll ──────────────────── v1.58.0+0
+   Installed Showoff ────────────────────── v1.0.3
+   Installed PtrArrays ──────────────────── v1.4.0
+   Installed xkbcommon_jll ──────────────── v1.13.0+0
+   Installed FFMPEG ─────────────────────── v0.4.5
+   Installed ColorSchemes ───────────────── v3.31.0
+   Installed Xorg_libpciaccess_jll ──────── v0.19.0+0
+   Installed Xorg_xcb_util_keysyms_jll ──── v0.4.1+0
+   Installed XZ_jll ─────────────────────── v5.8.3+0
+   Installed SentinelArrays ─────────────── v1.4.10
+   Installed HarfBuzz_jll ───────────────── v8.5.1+0
+   Installed PlotThemes ─────────────────── v3.3.0
+   Installed GLFW_jll ───────────────────── v3.5.1+0
+   Installed UnicodeFun ─────────────────── v0.4.1
+   Installed WorkerUtilities ────────────── v1.6.1
+   Installed x264_jll ───────────────────── v10164.0.1+0
+   Installed StatsAPI ───────────────────── v1.8.0
+   Installed FriBidi_jll ────────────────── v1.0.17+0
+   Installed fzf_jll ────────────────────── v0.61.1+0
+   Installed WeakRefStrings ─────────────── v1.4.3
+   Installed StatsBase ──────────────────── v0.34.13
+   Installed Qt6Svg_jll ─────────────────── v6.10.2+0
+   Installed mtdev_jll ──────────────────── v1.1.7+0
+   Installed JLFzf ──────────────────────── v0.1.11
+   Installed FreeType2_jll ──────────────── v2.14.3+1
+   Installed libaom_jll ─────────────────── v3.14.1+0
+   Installed libpng_jll ─────────────────── v1.6.58+0
+   Installed eudev_jll ──────────────────── v3.2.14+0
+   Installed Xorg_libxcb_jll ────────────── v1.17.1+0
+   Installed Xorg_libXext_jll ───────────── v1.3.8+0
+   Installed Plots ──────────────────────── v1.41.7
+   Installed Dbus_jll ───────────────────── v1.16.2+0
+   Installed CSV ────────────────────────── v0.10.17
+   Installed Expat_jll ──────────────────── v2.8.3+0
+   Installed Libtiff_jll ────────────────── v4.7.3+0
+   Installed PooledArrays ───────────────── v1.4.3
+   Installed Zstd_jll ───────────────────── v1.5.7+1
+   Installed Format ─────────────────────── v1.3.7
+   Installed TensorCore ─────────────────── v0.1.1
+   Installed Xorg_xcb_util_cursor_jll ───── v0.1.6+0
+   Installed PrettyTables ───────────────── v3.4.8
+   Installed libinput_jll ───────────────── v1.28.1+0
+   Installed Ogg_jll ────────────────────── v1.3.6+0
+   Installed ColorVectorSpace ───────────── v0.11.0
+   Installed Libffi_jll ─────────────────── v3.4.7+0
+   Installed Vulkan_Loader_jll ──────────── v1.3.243+0
+   Installed Xorg_libXi_jll ─────────────── v1.8.4+0
+   Installed libevdev_jll ───────────────── v1.13.4+0
+   Installed Ghostscript_jll ────────────── v9.55.1+0
+   Installed Qt6ShaderTools_jll ─────────── v6.10.2+1
+   Installed Xorg_libXrender_jll ────────── v0.9.12+0
+   Installed Qt6Declarative_jll ─────────── v6.10.2+2
+   Installed Xorg_xcb_util_renderutil_jll ─ v0.3.10+0
+   Installed Crayons ────────────────────── v4.2.0
+   Installed Graphite2_jll ──────────────── v1.3.16+0
+   Installed AliasTables ────────────────── v1.1.3
+   Installed libass_jll ─────────────────── v0.17.4+0
+   Installed Xorg_libXcursor_jll ────────── v1.2.4+0
+   Installed Libuuid_jll ────────────────── v2.42.0+0
+   Installed Xorg_libICE_jll ────────────── v1.1.2+0
+   Installed StableRNGs ─────────────────── v1.0.4
+   Installed Latexify ───────────────────── v0.16.12
+   Installed Wayland_jll ────────────────── v1.24.0+0
+   Installed libdrm_jll ─────────────────── v2.4.134+0
+   Installed FFMPEG_jll ─────────────────── v8.1.2+0
+   Installed Pixman_jll ─────────────────── v0.46.4+0
+   Installed Xorg_xkeyboard_config_jll ──── v2.47.0+2
+   Installed Xorg_xtrans_jll ────────────── v1.6.0+0
+   Installed LLVMOpenMP_jll ─────────────── v22.1.7+0
+   Installed LAME_jll ───────────────────── v3.100.3+0
+   Installed Xorg_libXrandr_jll ─────────── v1.5.6+0
+   Installed Qt6Wayland_jll ─────────────── v6.10.2+1
+   Installed GettextRuntime_jll ─────────── v0.22.4+0
+   Installed Libiconv_jll ───────────────── v1.18.0+0
+   Installed RecipesBase ────────────────── v1.3.4
+   Installed Xorg_libXfixes_jll ─────────── v6.0.2+0
+   Installed Qt6Base_jll ────────────────── v6.10.2+2
+   Installed LaTeXStrings ───────────────── v1.4.1
+   Installed libvorbis_jll ──────────────── v1.3.8+0
+   Installed Glib_jll ───────────────────── v2.88.3+0
+   Installed Xorg_libX11_jll ────────────── v1.8.13+0
+   Installed Libglvnd_jll ───────────────── v1.7.1+1
+   Installed Unzip ──────────────────────── v0.2.0
+   Installed Xorg_libXdmcp_jll ──────────── v1.1.6+0
+   Installed SortingAlgorithms ──────────── v1.2.3
+   Installed FilePathsBase ──────────────── v0.9.24
+   Installed StringManipulation ─────────── v0.5.0
+  Installing 77 artifacts
+   Installed artifact Xorg_libXau              36.6 KiB
+   Installed artifact libevdev                 117.1 KiB
+   Installed artifact Xorg_libxkbfile          91.1 KiB
+   Installed artifact Wayland                  390.6 KiB
+   Installed artifact Xorg_xcb_util            39.5 KiB
+   Installed artifact libva                    235.7 KiB
+   Installed artifact Xorg_libXinerama         25.5 KiB
+   Installed artifact libaom                   6.5 MiB
+   Installed artifact Xorg_libxcb              2.1 MiB
+   Installed artifact Xorg_xkeyboard_config    1.1 MiB
+   Installed artifact JpegTurbo                1.9 MiB
+   Installed artifact Qt6ShaderTools           2.1 MiB
+   Installed artifact mtdev                    79.6 KiB
+   Installed artifact libdrm                   372.6 KiB
+   Installed artifact Xorg_xtrans              48.2 KiB
+   Installed artifact libass                   427.8 KiB
+   Installed artifact Glib                     7.8 MiB
+   Installed artifact x264                     2.1 MiB
+   Installed artifact Xorg_libXdmcp            67.7 KiB
+   Installed artifact Graphite2                120.3 KiB
+   Installed artifact LLVMOpenMP               680.4 KiB
+   Installed artifact libinput                 1.0 MiB
+   Installed artifact Xorg_xcb_util_image      54.3 KiB
+   Installed artifact Pango                    2.1 MiB
+   Installed artifact Libuuid                  3.9 MiB
+   Installed artifact Xorg_libSM               164.1 KiB
+   Installed artifact libpng                   329.4 KiB
+   Installed artifact Fontconfig               984.8 KiB
+   Installed artifact Xorg_libX11              4.8 MiB
+   Installed artifact Xorg_xcb_util_wm         147.9 KiB
+   Installed artifact Xorg_xkbcomp             274.8 KiB
+   Installed artifact xkbcommon                298.7 KiB
+   Installed artifact Expat                    298.3 KiB
+   Installed artifact eudev                    3.9 MiB
+   Installed artifact Opus                     960.9 KiB
+   Installed artifact Xorg_libXcursor          227.1 KiB
+   Installed artifact Xorg_libXext             286.6 KiB
+   Installed artifact Vulkan_Loader            177.3 KiB
+   Installed artifact Libffi                   44.2 KiB
+   Installed artifact x265                     1.4 MiB
+   Installed artifact fzf                      3.3 MiB
+   Installed artifact Ghostscript              31.4 MiB
+   Installed artifact Libtiff                  2.4 MiB
+   Installed artifact GettextRuntime           543.0 KiB
+   Installed artifact Cairo                    2.2 MiB
+   Installed artifact Pixman                   390.8 KiB
+   Installed artifact libvorbis                271.0 KiB
+   Installed artifact GR                       20.4 MiB
+   Installed artifact FriBidi                  78.9 KiB
+   Installed artifact libdecor                 44.1 KiB
+   Installed artifact Xorg_libXrender          435.9 KiB
+   Installed artifact FreeType2                1.5 MiB
+   Installed artifact XZ                       1.6 MiB
+   Installed artifact Xorg_xcb_util_renderutil 32.1 KiB
+   Installed artifact Qt6Base                  23.1 MiB
+   Installed artifact Xorg_xcb_util_cursor     27.6 KiB
+   Installed artifact Xorg_libXfixes           59.0 KiB
+   Installed artifact Qt6Svg                   386.4 KiB
+   Installed artifact Libglvnd                 833.5 KiB
+   Installed artifact Xorg_libXi               1.6 MiB
+   Installed artifact LAME                     292.5 KiB
+   Installed artifact Xorg_xcb_util_keysyms    17.8 KiB
+   Installed artifact Xorg_libICE              384.9 KiB
+   Installed artifact Xorg_libpciaccess        26.2 KiB
+   Installed artifact Zstd                     646.0 KiB
+   Installed artifact HarfBuzz                 1.7 MiB
+   Installed artifact GLFW                     191.7 KiB
+   Installed artifact Xorg_libXrandr           97.3 KiB
+   Installed artifact Dbus                     489.8 KiB
+   Installed artifact Qt6Wayland               1.4 MiB
+   Installed artifact Ogg                      250.3 KiB
+   Installed artifact Libiconv                 1.9 MiB
+   Installed artifact LERC                     267.4 KiB
+   Installed artifact libfdk_aac               2.8 MiB
+   Installed artifact Libmount                 6.9 MiB
+   Installed artifact FFMPEG                   11.9 MiB
+   Installed artifact Qt6Declarative           23.8 MiB
+Precompiling packages...
+    522.2 ms  ✓ LaTeXStrings
+    491.3 ms  ✓ TensorCore
+    517.0 ms  ✓ StatsAPI
+    515.9 ms  ✓ Contour
+    495.8 ms  ✓ PtrArrays
+    486.9 ms  ✓ InvertedIndices
+    502.9 ms  ✓ StableRNGs
+    570.0 ms  ✓ WorkerUtilities
+    487.8 ms  ✓ PooledArrays
+    493.8 ms  ✓ SortingAlgorithms
+    693.3 ms  ✓ InlineStrings
+    473.7 ms  ✓ AliasTables
+    522.8 ms  ✓ EpollShim_jll
+    553.2 ms  ✓ Xorg_libICE_jll
+    563.1 ms  ✓ Graphite2_jll
+   1129.0 ms  ✓ Format
+    565.2 ms  ✓ Libmount_jll
+    576.6 ms  ✓ Xorg_libXau_jll
+    590.6 ms  ✓ libpng_jll
+    571.9 ms  ✓ libfdk_aac_jll
+   1333.5 ms  ✓ Missings
+   1428.1 ms  ✓ Unzip
+    578.8 ms  ✓ LAME_jll
+    581.0 ms  ✓ LERC_jll
+   1120.7 ms  ✓ UnicodeFun
+   1683.3 ms  ✓ Grisu
+   1156.2 ms  ✓ SentinelArrays
+    581.2 ms  ✓ Ogg_jll
+    559.2 ms  ✓ Xorg_libXdmcp_jll
+    601.7 ms  ✓ mtdev_jll
+    637.2 ms  ✓ fzf_jll
+    657.0 ms  ✓ JpegTurbo_jll
+    664.5 ms  ✓ XZ_jll
+    602.7 ms  ✓ x265_jll
+   1864.0 ms  ✓ Crayons
+    584.3 ms  ✓ x264_jll
+    602.4 ms  ✓ libaom_jll
+    529.0 ms  ✓ Xorg_xtrans_jll
+    602.2 ms  ✓ Zstd_jll
+    588.4 ms  ✓ Opus_jll
+    600.8 ms  ✓ Expat_jll
+    575.5 ms  ✓ libevdev_jll
+    592.7 ms  ✓ Libiconv_jll
+    570.4 ms  ✓ Libffi_jll
+    578.3 ms  ✓ FriBidi_jll
+    564.5 ms  ✓ Libuuid_jll
+    603.5 ms  ✓ eudev_jll
+    624.6 ms  ✓ FreeType2_jll
+    587.4 ms  ✓ LLVMOpenMP_jll
+    410.8 ms  ✓ InlineStrings → ParsersExt
+    403.8 ms  ✓ Showoff
+    578.8 ms  ✓ Xorg_libpciaccess_jll
+    940.1 ms  ✓ FilePathsBase
+    630.1 ms  ✓ Xorg_libSM_jll
+    654.6 ms  ✓ libvorbis_jll
+    648.1 ms  ✓ JLFzf
+   1206.8 ms  ✓ RecipesBase
+    700.4 ms  ✓ Libtiff_jll
+   2734.5 ms  ✓ ColorVectorSpace
+    709.3 ms  ✓ Dbus_jll
+    678.3 ms  ✓ GettextRuntime_jll
+    628.9 ms  ✓ libinput_jll
+    718.9 ms  ✓ Wayland_jll
+    557.3 ms  ✓ Pixman_jll
+    478.6 ms  ✓ FilePathsBase → FilePathsBaseMmapExt
+   1155.6 ms  ✓ Ghostscript_jll
+    593.2 ms  ✓ libdrm_jll
+    784.0 ms  ✓ Fontconfig_jll
+    742.6 ms  ✓ WeakRefStrings
+   1418.1 ms  ✓ Xorg_libxcb_jll
+    478.6 ms  ✓ ColorVectorSpace → SpecialFunctionsExt
+   1048.9 ms  ✓ FilePathsBase → FilePathsBaseTestExt
+    790.4 ms  ✓ Glib_jll
+    574.2 ms  ✓ Xorg_xcb_util_jll
+    661.5 ms  ✓ Xorg_libX11_jll
+   2545.3 ms  ✓ StringManipulation
+    578.5 ms  ✓ Xorg_xcb_util_image_jll
+    577.6 ms  ✓ Xorg_xcb_util_renderutil_jll
+    605.0 ms  ✓ Xorg_xcb_util_keysyms_jll
+    632.1 ms  ✓ Xorg_xcb_util_wm_jll
+    570.9 ms  ✓ Xorg_libXrender_jll
+    571.3 ms  ✓ Xorg_libXfixes_jll
+    574.9 ms  ✓ Xorg_libXext_jll
+    657.6 ms  ✓ Xorg_libxkbfile_jll
+   2829.2 ms  ✓ StatsBase
+    584.7 ms  ✓ Xorg_xcb_util_cursor_jll
+    582.7 ms  ✓ Xorg_libXcursor_jll
+    589.9 ms  ✓ Xorg_libXrandr_jll
+    602.8 ms  ✓ Xorg_libXi_jll
+    543.1 ms  ✓ Xorg_xkbcomp_jll
+    649.6 ms  ✓ libva_jll
+    677.1 ms  ✓ Xorg_libXinerama_jll
+    725.3 ms  ✓ Cairo_jll
+    776.7 ms  ✓ Libglvnd_jll
+    502.4 ms  ✓ Xorg_xkeyboard_config_jll
+    698.0 ms  ✓ HarfBuzz_jll
+   3116.6 ms  ✓ Latexify
+   3400.8 ms  ✓ ColorSchemes
+    605.0 ms  ✓ xkbcommon_jll
+    601.8 ms  ✓ libass_jll
+    699.5 ms  ✓ Pango_jll
+    654.1 ms  ✓ Latexify → SparseArraysExt
+    587.8 ms  ✓ Vulkan_Loader_jll
+    605.7 ms  ✓ libdecor_jll
+    920.1 ms  ✓ FFMPEG_jll
+   1046.2 ms  ✓ Qt6Base_jll
+    636.6 ms  ✓ GLFW_jll
+    478.7 ms  ✓ FFMPEG
+    644.4 ms  ✓ Qt6ShaderTools_jll
+    657.6 ms  ✓ Qt6Svg_jll
+    856.0 ms  ✓ GR_jll
+   2165.7 ms  ✓ Qt6Declarative_jll
+    680.6 ms  ✓ Qt6Wayland_jll
+   5858.6 ms  ✓ PlotUtils
+   2191.8 ms  ✓ PlotThemes
+   3561.1 ms  ✓ GR
+  11784.2 ms  ✓ CSV
+   3018.4 ms  ✓ RecipesPipeline
+  13656.2 ms  ✓ PrettyTables
+  25636.9 ms  ✓ DataFrames
+   1274.7 ms  ✓ Latexify → DataFramesExt
+  34617.6 ms  ✓ Plots
+  122 dependencies successfully precompiled in 50 seconds. 123 already precompiled.
+  24 dependencies precompiled but different versions are currently loaded (ArgTools, Base64, Dates, Downloads, JuliaSyntaxHighlighting, LibCURL, LibCURL_jll, LibGit2, LibGit2_jll, LibSSH2_jll, Logging, Markdown, MozillaCACerts_jll, NetworkOptions, OpenSSL_jll, Pkg, Printf, StyledStrings, TOML, Tar, UUIDs, Zlib_jll, nghttp2_jll and p7zip_jll). Restart julia to access the new versions. Otherwise, 155 dependents of these packages may trigger further precompilation to work with the unexpected versions.
+┌ Error: uncaught error
+│   exception =
+│    MAX_RAM_GB is required (fixed RAM budget in GiB).
+│    Stacktrace:
+│     [1] error(s::String)
+│       @ Base ./error.jl:44
+│     [2] get_ramBudgetBytes
+│       @ ~/kapt_orange_challenge/scripts/run_scheduler.jl:79 [inlined]
+│     [3] main()
+│       @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:115
+│     [4] top-level scope
+│       @ ~/kapt_orange_challenge/scripts/run_scheduler.jl:196
+│     [5] include(mod::Module, _path::String)
+│       @ Base ./Base.jl:306
+│     [6] exec_options(opts::Base.JLOptions)
+│       @ Base ./client.jl:317
+│     [7] _start()
+│       @ Base ./client.jl:550
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:198
