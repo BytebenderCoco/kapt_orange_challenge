@@ -1,15 +1,16 @@
 {
-    "version": "1.1.0",
-    "instance": "04",
+    "version": "1.2.0",
+    "instance": "08",
     "succeeded": true,
     "results": {
-        "vertices": 50,
-        "links": 250,
+        "vertices": 150,
+        "links": 654,
         "demands": 200,
-        "status": "INTERRUPTED",
+        "status": "TIME_LIMIT",
         "mlu": null,
+        "lowerBound": 0.3189036974295927,
         "gap": 0,
-        "cpuTime": 201.88998007774353,
+        "cpuTime": 1097.600653886795,
         "waypoints": [
             [
             ],
@@ -415,37 +416,37 @@
     },
     "events": [
         {
-            "time": "2026-08-25T16-59-13",
+            "time": "2026-08-26T08-03-53",
             "level": "info",
             "message": "loading instance data"
         },
         {
-            "time": "2026-08-25T16-59-13",
+            "time": "2026-08-26T08-03-53",
             "level": "info",
             "message": "graph calculated"
         },
         {
-            "time": "2026-08-25T16-59-13",
+            "time": "2026-08-26T08-03-54",
             "level": "info",
             "message": "parameters built"
         },
         {
-            "time": "2026-08-25T16-59-13",
+            "time": "2026-08-26T08-03-54",
             "level": "info",
             "message": "building model"
         },
         {
-            "time": "2026-08-25T16-59-50",
+            "time": "2026-08-26T08-05-06",
             "level": "info",
             "message": "solving model"
         },
         {
-            "time": "2026-08-25T17-03-12",
+            "time": "2026-08-26T08-23-24",
             "level": "info",
             "message": "model solved"
         },
         {
-            "time": "2026-08-25T17-03-12",
+            "time": "2026-08-26T08-23-24",
             "level": "info",
             "message": "waypoints decoded"
         }

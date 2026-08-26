@@ -1,5 +1,5 @@
 {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "instance": "01",
     "succeeded": true,
     "results": {
@@ -8,8 +8,9 @@
         "demands": 40,
         "status": "OPTIMAL",
         "mlu": 0.929383899821109,
+        "lowerBound": 0.929383899821109,
         "gap": 0,
-        "cpuTime": 2.394404888153076,
+        "cpuTime": 2.462460994720459,
         "waypoints": [
             [
             ],
@@ -108,37 +109,37 @@
     },
     "events": [
         {
-            "time": "2026-08-25T16-57-37",
+            "time": "2026-08-26T08-03-52",
             "level": "info",
             "message": "loading instance data"
         },
         {
-            "time": "2026-08-25T16-57-37",
+            "time": "2026-08-26T08-03-53",
             "level": "info",
             "message": "graph calculated"
         },
         {
-            "time": "2026-08-25T16-57-37",
+            "time": "2026-08-26T08-03-54",
             "level": "info",
             "message": "parameters built"
         },
         {
-            "time": "2026-08-25T16-57-37",
+            "time": "2026-08-26T08-03-54",
             "level": "info",
             "message": "building model"
         },
         {
-            "time": "2026-08-25T16-57-37",
+            "time": "2026-08-26T08-03-56",
             "level": "info",
             "message": "solving model"
         },
         {
-            "time": "2026-08-25T16-57-40",
+            "time": "2026-08-26T08-03-59",
             "level": "info",
             "message": "model solved"
         },
         {
-            "time": "2026-08-25T16-57-40",
+            "time": "2026-08-26T08-03-59",
             "level": "info",
             "message": "waypoints decoded"
         }
