@@ -25,13 +25,15 @@ export get_runDir_by_timestamp, record_event!,
 #   1.2.0  added results.lowerBound
 #   1.3.0  added results.maxrss (peak RSS in bytes, for RAM calibration)
 #   2.0.0  multi-period: results.waypoints becomes a period → per-demand map
+#   1.4.0  added results.loadVector (sorted per-arc utilizations, the spec's L)
+#   2.1.0  loadVector carried on the two-period document
 #          (as t1_experiments.jl produces); every other field is unchanged.
 # SCHEMA_VERSION is the default single-period (period-0) document; pass
 # `version = SCHEMA_VERSION_V2` to get_resultDoc_by_experimentRow for the
 # two-period shape. The two differ only in the `version` label and the
 # `waypoints` shape — which flows straight through `row.waypoints` either way.
-const SCHEMA_VERSION = "1.3.0"
-const SCHEMA_VERSION_V2 = "2.0.0"
+const SCHEMA_VERSION = "1.4.0"
+const SCHEMA_VERSION_V2 = "2.1.0"
 
 # A fresh run directory under `resultsDir`, named by the current local time. The
 # `yyyymmdd-HHMMSS` stamp is lexically sortable (so newest == last) and matches
@@ -89,6 +91,9 @@ function get_resultDoc_by_experimentRow(row; version = SCHEMA_VERSION)
             # a period → per-demand map under SCHEMA_VERSION_V2. [] = shortest-path
             # routing, null for a failed run. Not yet the srpaths.json format.
             waypoints  = row.waypoints,
+            # The spec's L: (t, from, to, util) records for every load-bearing arc,
+            # sorted by descending utilization (top = mlu). null for a failed run.
+            loadVector = row.loadVector === missing ? nothing : row.loadVector,
         ),
         events    = row.events,
     )
