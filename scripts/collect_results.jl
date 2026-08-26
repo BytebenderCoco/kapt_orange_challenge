@@ -30,22 +30,25 @@ function get_rows_from_run(resultsDir)
     return [JSON3.read(read(joinpath(resultsDir, f), String)) for f in files]
 end
 
-# Write the summary table as CSV. Empty string for missing/non-finite numbers.
+# Write the summary table as CSV. Empty string for missing/non-finite numbers. The
+# solve metrics live in the nested `results` block of the Result-module schema; the
+# `waypoints` and `events` fields of that document are not summary columns.
 function save_summary_csv(rows, outPath)
     header = "instance,succeeded,vertices,links,demands,status,mlu,lowerBound,gap,cpuTime"
     lines = String[header]
     for row in rows
+        results = row.results
         push!(lines, join([
             string(row.instance),
             string(row.succeeded),
-            row.vertices === nothing ? "" : string(row.vertices),
-            row.links    === nothing ? "" : string(row.links),
-            row.demands  === nothing ? "" : string(row.demands),
-            string(row.status),
-            row.mlu        === nothing ? "" : string(row.mlu),
-            row.lowerBound === nothing ? "" : string(row.lowerBound),
-            row.gap        === nothing ? "" : string(row.gap),
-            row.cpuTime    === nothing ? "" : string(row.cpuTime),
+            results.vertices === nothing ? "" : string(results.vertices),
+            results.links    === nothing ? "" : string(results.links),
+            results.demands  === nothing ? "" : string(results.demands),
+            string(results.status),
+            results.mlu        === nothing ? "" : string(results.mlu),
+            results.lowerBound === nothing ? "" : string(results.lowerBound),
+            results.gap        === nothing ? "" : string(results.gap),
+            results.cpuTime    === nothing ? "" : string(results.cpuTime),
         ], ','))
     end
     write(outPath, join(lines, '\n') * "\n")

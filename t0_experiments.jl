@@ -22,6 +22,8 @@ begin
     using .Scenario
     include(joinpath(@__DIR__, "source", "Model.jl"))
     using .Model
+    include(joinpath(@__DIR__, "source", "Result.jl"))
+    using .Result
 end
 
 # ╔═╡ b0000000-0000-4000-8000-000000000001
@@ -145,11 +147,6 @@ get_instanceNames_from_dir(dataDir) =
     sort([replace(f, "-net.json" => "")
           for f in readdir(dataDir) if endswith(f, "-net.json")])
 
-# ╔═╡ b0000000-0000-4000-8000-000000000019
-# Append one timestamped event to an instance's log (info by default, :error on failure).
-record_event!(events, message; level = :info) =
-    push!(events, (time = Dates.format(now(), "yyyy-mm-ddTHH-MM-SS"), level, message))
-
 # ╔═╡ b0000000-0000-4000-8000-000000000013
 # One result row for a single instance: run the whole period-0 pipeline and return its
 # graph metadata plus the solve outcome, recording each pipeline step into `events`.
@@ -180,15 +177,17 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     waypoints  = get_waypoints_by_solvedModel(model, periodInputs, demands, periods)[0]
     record_event!(events, "waypoints decoded")
     return (
-        instance  = instanceName,
-        vertices  = nv(graph.graph),
-        links     = ne(graph.graph),
-        demands   = length(demands),
-        status    = solution.status,
-        mlu       = solution.mlu,
-        gap       = solution.gap,
-        cpuTime   = solution.cpuTime,
-        waypoints = waypoints,
+        instance   = instanceName,
+        vertices   = nv(graph.graph),
+        links      = ne(graph.graph),
+        demands    = length(demands),
+        status     = solution.status,
+        mlu        = solution.mlu,
+        lowerBound = solution.lowerBound,
+        gap        = solution.gap,
+        cpuTime    = solution.cpuTime,
+        waypoints  = waypoints,
+        events     = events,
     )
 end
 
@@ -199,59 +198,24 @@ md"""
 The sweep writes each instance to `t0_results/<timestamp>/<index>.json` **as it
 finishes**, not in one final batch — so cancelling the notebook keeps every instance
 that already completed. Each file holds the instance's index, whether the run
-succeeded, the solve metrics, and an `events` log recording each pipeline step (and
-any failure). This is the write-side mirror of the `get_*_from_instance` readers.
+succeeded, the solve metrics, the per-demand routing `waypoints`, and an `events` log
+recording each pipeline step (and any failure).
+
+The document shape and the write itself live in the shared `Result` module — the same
+`get_resultDoc_by_experimentRow` / `save_resultDoc_to_json` used by the headless
+`scripts/solve_instance.jl`, so both paths emit one schema. This is the write-side
+mirror of the `get_*_from_instance` readers.
 """
 
 # ╔═╡ b0000000-0000-4000-8000-000000000016
 t0ResultsDir = joinpath(@__DIR__, "t0_results")
 
-# ╔═╡ b0000000-0000-4000-8000-000000000017
-begin
-    # "01" from "setA-01": the instance's index within its set (the trailing -NN, no dash).
-    get_index_by_instanceName(instanceName) = replace(instanceName, r"^.*-" => "")
-    
-    # Persist one experiment row to t0_results/<timestamp>/<index>.json. The file carries a
-    # schema `version`, the instance `index`, a `succeeded` flag (false for the rows the
-    # try/catch turned into :error), the solve metrics, the per-demand routing `waypoints`,
-    # and the `events` log (each a time/level/message record of a pipeline step, or the
-    # failure). Writing per row as the
-    # sweep goes (not one final batch) means a cancelled run keeps every instance already
-    # finished. JSON has no Inf and no native enum, so a non-finite mlu is written as null
-    # and the solver status as its name string.
-    function save_experimentRow_to_json(row, runDir, events)
-        index = get_index_by_instanceName(row.instance)
-        doc = (
-            version   = "1.1.0",
-            instance  = index,
-            succeeded = row.status !== :error,
-            results   = (
-                vertices  = row.vertices,
-                links     = row.links,
-                demands   = row.demands,
-                status    = string(row.status),
-                mlu       = (row.mlu === missing || isfinite(row.mlu)) ? row.mlu : nothing,
-                gap       = row.gap,
-                cpuTime   = row.cpuTime,
-                # Per-demand waypoint lists (JSON node ids); [] = shortest-path
-                # routing, null for a failed run. Not yet the srpaths.json format.
-                waypoints = row.waypoints,
-            ),
-            events    = events,
-        )
-        open(joinpath(runDir, "$index.json"), "w") do io
-            JSON3.pretty(io, JSON3.write(doc))
-        end
-    end
-end
-
 # ╔═╡ b0000000-0000-4000-8000-000000000014
 let
-    # One run directory per sweep; each instance's file lands here the moment it finishes,
-    # so cancelling the notebook keeps whatever already completed.
-    timestamp = Dates.format(now(), "yyyy-mm-ddTHH-MM")
-    runDir    = joinpath(t0ResultsDir, timestamp)
-    mkpath(runDir)
+    # One run directory per sweep, minted once and reused; each instance's file lands here
+    # the moment it finishes (the directory is created lazily by the first save), so
+    # cancelling the notebook keeps whatever already completed.
+    runDir = get_runDir_by_timestamp(t0ResultsDir)
     @progress for instanceName in get_instanceNames_from_dir(dataDir)
         events = NamedTuple[]
         row = try
@@ -265,12 +229,12 @@ let
             (
                 instance = instanceName,
                 vertices = missing, links = missing, demands = missing,
-                status   = :error,
-                mlu = missing, gap = missing, cpuTime = missing,
-                waypoints = missing,
+                status = :error,
+                mlu = missing, lowerBound = missing, gap = missing, cpuTime = missing,
+                waypoints = missing, events = events,
             )
         end
-        save_experimentRow_to_json(row, runDir, events)
+        save_resultDoc_to_json(get_resultDoc_by_experimentRow(row), runDir)
     end
     runDir
 end
@@ -751,11 +715,9 @@ version = "5.15.0+0"
 # ╠═b0000000-0000-4000-8000-00000000000a
 # ╟─b0000000-0000-4000-8000-000000000011
 # ╠═b0000000-0000-4000-8000-000000000012
-# ╠═b0000000-0000-4000-8000-000000000019
 # ╠═b0000000-0000-4000-8000-000000000013
 # ╟─b0000000-0000-4000-8000-000000000015
 # ╠═b0000000-0000-4000-8000-000000000016
-# ╠═b0000000-0000-4000-8000-000000000017
 # ╠═b0000000-0000-4000-8000-000000000014
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

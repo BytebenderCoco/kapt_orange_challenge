@@ -31,6 +31,8 @@ include(joinpath(REPO_ROOT, "source", "Scenario.jl"))
 using .Scenario
 include(joinpath(REPO_ROOT, "source", "Model.jl"))
 using .Model
+include(joinpath(REPO_ROOT, "source", "Result.jl"))
+using .Result
 
 # Parse the CLI arguments into (instanceName, resultsDir, dataDir, timeLimitSec).
 function parse_args(args)
@@ -102,95 +104,77 @@ function get_maxSegments_from_instance(dataDir, instanceName)
     return get_maxSegments_from_json(scenario)
 end
 
-# One result row for a single instance: run the whole period-0 pipeline.
-function get_experimentRow_from_instance(dataDir, instanceName; timeLimitSec = 900)
-    graph      = get_graph_from_instance(dataDir, instanceName)
-    r          = get_splitCoefficients_by_graph(graph)
-    capacities = get_capacities_by_graph(graph)
-    demands    = get_demands_from_instance(dataDir, instanceName, graph)
-    maxSeg     = get_maxSegments_from_instance(dataDir, instanceName)
-    # Assemble the period-0 model with the fluent builder, then solve it.
-    n          = nv(graph.graph)
-    builder    = AsrModelBuilder(; timeLimitSec)
-    set_variables!(builder, demands, n)
-    set_flowConservation!(builder, demands, n)
-    set_segmentCap!(builder, demands, n, maxSeg)
-    set_loadBounds!(builder, graph, r, demands, capacities)
-    solution   = solve!(build(builder))
+# One result row for a single instance: run the whole period-0 pipeline, recording
+# each step into `events`. Mirrors the notebook's get_experimentRow_from_instance so
+# both paths produce the same experimentRow (and, through Result, the same document).
+function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 900)
+    record_event!(events, "loading instance data")
+    graph        = get_graph_from_instance(dataDir, instanceName)
+    record_event!(events, "graph calculated")
+    r            = get_splitCoefficients_by_graph(graph)
+    demands      = get_demands_from_instance(dataDir, instanceName, graph)
+    maxSeg       = get_maxSegments_from_instance(dataDir, instanceName)
+    record_event!(events, "parameters built")
+    record_event!(events, "building model")
+    # Period-0-only model: the period set is just {0} (no budget step).
+    n            = nv(graph.graph)
+    periods      = 0:0
+    periodInputs = Dict(0 => (graph = graph, r = r))
+    builder      = AsrModelBuilder(; timeLimitSec)
+    set_variables!(builder, demands, n, periods)
+    set_flowConservation!(builder, demands, n, periods)
+    set_segmentCap!(builder, demands, n, maxSeg, periods)
+    set_loadBounds!(builder, periodInputs, demands, periods)
+    model        = build(builder)
+    record_event!(events, "solving model")
+    solution     = solve!(model)
+    record_event!(events, "model solved")
+    waypoints    = get_waypoints_by_solvedModel(model, periodInputs, demands, periods)[0]
+    record_event!(events, "waypoints decoded")
     return (
         instance   = instanceName,
-        succeeded  = true,
         vertices   = nv(graph.graph),
         links      = ne(graph.graph),
         demands    = length(demands),
-        status     = string(solution.status),
+        status     = solution.status,
         mlu        = solution.mlu,
         lowerBound = solution.lowerBound,
         gap        = solution.gap,
         cpuTime    = solution.cpuTime,
+        waypoints  = waypoints,
+        events     = events,
     )
-end
-
-# Map a result row to a JSON-safe form: JSON has no Inf, so a non-finite MLU or
-# bound is written as null.
-function to_jsonable(row)
-    return (
-        instance   = row.instance,
-        succeeded  = row.succeeded,
-        vertices   = row.vertices,
-        links      = row.links,
-        demands    = row.demands,
-        status     = row.status,
-        mlu        = isfinite(row.mlu) ? row.mlu : nothing,
-        lowerBound = isfinite(row.lowerBound) ? row.lowerBound : nothing,
-        gap        = row.gap,
-        cpuTime    = row.cpuTime,
-    )
-end
-
-# Write one instance's result to <resultsDir>/<index>.json atomically (temp file
-# + rename) so a reader never sees a half-written result. The index is the
-# instance's numeric id (e.g. "setA-05" -> "05"), matching the notebook's
-# t0_results/<timestamp>/NN.json naming.
-function save_result_to_json(row, resultsDir)
-    index = replace(row.instance, r"^.*-" => "")
-    mkpath(resultsDir)
-    outPath = joinpath(resultsDir, "$(index).json")
-    tmpPath = "$outPath.tmp"
-    open(tmpPath, "w") do io
-        JSON3.pretty(io, JSON3.write(to_jsonable(row)))
-    end
-    mv(tmpPath, outPath; force = true)
-    return outPath
 end
 
 function main()
     args = parse_args(ARGS)
 
+    events = NamedTuple[]
     row = try
         get_experimentRow_from_instance(
-            args.dataDir, args.instanceName; timeLimitSec = args.timeLimitSec
+            args.dataDir, args.instanceName, events; timeLimitSec = args.timeLimitSec
         )
     catch err
+        # Emit a same-schema :error row so the saved file stays on-schema; the process
+        # exit code (below) also signals the failure to run_parallel.sh.
+        record_event!(events, sprint(showerror, err); level = :error)
         @error "solve failed for instance" args.instanceName exception = (err, catch_backtrace())
         (
-            instance   = args.instanceName,
-            succeeded  = false,
-            vertices   = nothing,
-            links      = nothing,
-            demands    = nothing,
-            status     = "error",
-            mlu        = Inf,
-            lowerBound = Inf,
-            gap        = 0.0,
-            cpuTime    = 0.0,
+            instance = args.instanceName,
+            vertices = missing, links = missing, demands = missing,
+            status = :error,
+            mlu = missing, lowerBound = missing, gap = missing, cpuTime = missing,
+            waypoints = missing, events = events,
         )
     end
 
-    path = save_result_to_json(row, args.resultsDir)
-    println("$(row.instance): $(row.status) mlu=$(row.mlu) cpu=$(round(row.cpuTime, digits=2))s -> $path")
+    path      = save_resultDoc_to_json(get_resultDoc_by_experimentRow(row), args.resultsDir)
+    succeeded = row.status !== :error
+    mlu       = row.mlu === missing ? "n/a" : row.mlu
+    cpuTime   = row.cpuTime === missing ? 0.0 : round(row.cpuTime, digits = 2)
+    println("$(args.instanceName): $(row.status) mlu=$mlu cpu=$(cpuTime)s -> $path")
 
-    return row.succeeded ? 0 : 1
+    return succeeded ? 0 : 1
 end
 
 try
