@@ -128,6 +128,15 @@ action word.
 solution = solve!(model)   # optimize! + extract (status, mlu, gap, ...)
 ```
 
+`solve!` stays **one action** even when solving means *several* `optimize!` calls:
+the lexicographic descent of objective (5) minimizes the MLU, then descends the
+sorted load vector, **adding a freeze constraint to the model between solves**. That
+extra mutation (new gadget vars + the `Sₖ ≤ Sₖ*` freezes) is part of *solving* — it's
+the how of reaching the lex optimum — so it lives inside `solve!` rather than becoming
+a separate `add_*!` builder step. The rule: constraints that encode the **model
+definition** are `set_*!`/`add_*!` steps before `build`; constraints the **solve
+process** generates from intermediate results (the frozen `Sₖ*`) belong to `solve!`.
+
 ### Multiple outputs → one umbrella WHAT
 
 When a function produces several tightly-coupled outputs of a *shared*
