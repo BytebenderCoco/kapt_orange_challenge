@@ -41,7 +41,7 @@ over SSH on a remote server.
 
 - `t0_solve_instance.jl` — solve one instance headless (period 0), emitting the `Result` schema.
 - `t1_solve_instance.jl` — solve one instance headless (periods 0–1, with budget β(1)), emitting the v2 `Result` schema.
-- `run_scheduler.jl` — dispatch instances to workers (RAM-aware work queue).
+- `run_scheduler.jl` — launch the first 10 instances in parallel (period 0).
 - `t0_execution.sh` / `run_on_server.sh` — launch the parallel run / remote run.
 - `collect_results.jl` — gather the per-instance result files.
 

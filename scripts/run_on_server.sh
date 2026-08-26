@@ -8,8 +8,6 @@
 #
 # Env overrides:
 #   RUN_ID      run id (default: local server time stamp)
-#   MAX_RAM_GB  RAM budget for the scheduler (required, passed through)
-#   MAX_PROCS   max concurrent solves (optional, passed through)
 set -u
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,11 +26,6 @@ elif [ -x "$HOME/.juliaup/bin/julia" ]; then
 else
     export JULIA="julia"
 fi
-
-# Pass the scheduler budgets through (empty values are ignored by the scheduler,
-# which applies its own defaults for MAX_PROCS; MAX_RAM_GB is required).
-export MAX_RAM_GB="${MAX_RAM_GB:-}"
-export MAX_PROCS="${MAX_PROCS:-}"
 
 MODE="${1:-nohup}"
 mkdir -p "$LOGS_DIR"

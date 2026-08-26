@@ -38,7 +38,8 @@ using ..Graph: NetworkGraph, get_edgeData_by_graph
 
 export AsrModelBuilder, AsrModel,
     set_variables!, set_flowConservation!, set_segmentCap!, set_loadBounds!,
-    add_budgetBounds!, build, solve!, get_waypoints_by_solvedModel
+    add_budgetBounds!, build, solve!, get_waypoints_by_solvedModel,
+    get_loadVector_by_solvedModel
 
 # In-progress T-ASR model. Mutable, JuMP-style: the constructor seeds the data-free
 # parts (the λ variable and the `Min λ` objective); the `set_*!`/`add_*!` steps fill
@@ -72,10 +73,17 @@ end
 # Default builder: a HiGHS-backed JuMP model with the solver configured, the λ
 # variable declared and the `Min λ` objective set. Everything data-dependent is
 # added afterwards through the `set_*!`/`add_*!` steps. Mirrors `JuMP.Model(HiGHS.Optimizer)`.
-function AsrModelBuilder(; timeLimitSec = 900)
+#
+# `threads` caps HiGHS's parallel branch-and-bound. It defaults to 1 (one core per
+# solve) so the scheduler can run many instances side by side; pass a larger value
+# to give a single hard instance more cores. HiGHS threading is native (independent
+# of Julia's `-t`), and its MIP speedup is sublinear, so more threads help one
+# instance finish sooner but rarely scale linearly.
+function AsrModelBuilder(; timeLimitSec = 900, threads = 1)
     model = JuMP.Model(HiGHS.Optimizer)
     set_time_limit_sec(model, timeLimitSec)
     set_optimizer_attribute(model, "mip_rel_gap", 0.01)  # stop at 1% gap
+    set_optimizer_attribute(model, "threads", threads)
     set_silent(model)
 
     # λ: the maximum link utilization (MLU) being minimized.
@@ -307,13 +315,18 @@ function solve!(asrModel::AsrModel; maxLevels = 8, tol = 1e-6, deepGap = 0.05)
     if feasible
         # Snapshot the level-1 solution to warm-start level 2 (read now, apply pre-solve).
         warmVars, warmVals = snapshotSolution(model)
+        deepLevels = 2:min(maxLevels, length(loads))
         # Levels ≥ 2 only flatten loads below the already-fixed MLU, so they don't need
         # the tight level-1 gap. Loosen it to `deepGap` so the solver stops proving the
-        # precision these cosmetic levels don't require — the main descent speedup.
-        set_optimizer_attribute(model, "mip_rel_gap", deepGap)
+        # precision these cosmetic levels don't require — the main descent speedup. Guard
+        # it: when no deep level will run (maxLevels == 1, or < 2 load-bearing arcs), this
+        # would be a *trailing* modification after level 1's optimize!, invalidating the
+        # primal solution so get_waypoints_by_solvedModel / get_loadVector_by_solvedModel
+        # find nothing to read. Skip it and the model stays queryable.
+        isempty(deepLevels) || set_optimizer_attribute(model, "mip_rel_gap", deepGap)
         prevExpr = asrModel.lambda   # S₁ is bounded by λ
         prevVal  = mlu
-        for k in 2:min(maxLevels, length(loads))
+        for k in deepLevels
             @constraint(model, prevExpr <= prevVal + tol)   # freeze Sₖ₋₁, then solve level k
             Sk = add_lexLevel!(model, loads, caps, k)
             @objective(model, Min, Sk)
@@ -395,6 +408,32 @@ function get_waypoints_by_solvedModel(asrModel::AsrModel, periodInputs, demands,
     end
 
     return waypointsByPeriod
+end
+
+# Decode the load vector from a solved model: for every load-bearing arc a=(u,v) in
+# every period t, its utilization util(a,t) = load(a,t)/c(a) evaluated at the final
+# (flattened) solution, returned as (t, from, to, util) records sorted by descending
+# util. This is the spec's L = {λ(a,t)} that objective (5) lexicographically
+# minimizes; the top entry's util equals the reported mlu. Only load-bearing arcs
+# appear — arcs with no ECMP flow carry util 0 and are omitted (matching the spec's
+# Figure 4 "only the non-zero loads"). `from`/`to` are JSON node ids, as in
+# get_waypoints_by_solvedModel. Call only after solve! and before any re-optimize!;
+# empty if the solve produced no primal point.
+function get_loadVector_by_solvedModel(asrModel::AsrModel, periodInputs)
+    model = asrModel.model
+
+    # No primal solution → empty load vector.
+    has_values(model) || return NamedTuple[]
+
+    entries = NamedTuple[]
+    for ((t, (u, v)), loadExpr) in asrModel.loads
+        # util(a, t) = load(a, t) / c(a)
+        util = value(loadExpr) / asrModel.caps[(t, (u, v))]
+        nodeData = periodInputs[t].graph.nodeData
+        push!(entries, (t = t, from = nodeData[u].jsonId, to = nodeData[v].jsonId, util = util))
+    end
+    sort!(entries; by = entry -> entry.util, rev = true)
+    return entries
 end
 
 end # module Model
