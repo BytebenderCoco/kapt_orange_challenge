@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>T-Adaptive Segment Routing</title>
+
+<!-- Local assets (offline): fonts, KaTeX, charts -->
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/katex/katex.min.css">
+<script src="assets/katex/katex.min.js"></script>
+<script src="assets/katex/auto-render.min.js"></script>
+
+<style>
+/* =====================================================================
+   CARTESIAN — quiet, warm-stone editorial system
+   Playfair Display (400) headlines · Inter (400/500) body · 1px hairlines
+   ===================================================================== */
+:root {
+    --bg:          #FFFFFF;   /* white canvas */
+    --bg-2:        #E2DBD1;   /* deeper stone (fills)     */
+    --ink:         #1A1A1A;   /* headlines, primary       */
+    --gray:        #5A5A5A;   /* body text                */
+    --taupe:       #8A8178;   /* labels, numerals         */
+    --line:        #B8B0A4;   /* 1px structural hairline  */
+    --overlay:     rgba(255,255,255,0.3);
+    --font-display: 'Playfair Display', 'Times New Roman', serif;
+    --font-body:    'Inter', 'Helvetica Neue', sans-serif;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ---------- viewport-base.css (fixed 16:9 stage) ---------- */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #0f0f0d; }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: #0f0f0d; }
+.deck-stage {
+    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+    overflow: hidden; transform-origin: 0 0; background: var(--bg);
+}
+.slide {
+    position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden;
+    display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--bg);
+}
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+    html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+    .deck-viewport { position: static; overflow: visible; background: #fff; }
+    .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+    .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    .deck-controls, .nav-dots, .nav-arrows, .notes-panel { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* ---------- chrome ---------- */
+.nav-dots {
+    position: fixed; right: 26px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 14px; z-index: 2000;
+}
+.nav-dots button {
+    width: 8px; height: 8px; border-radius: 50%; border: none; padding: 0;
+    background: var(--line); cursor: pointer; transition: transform .25s var(--ease), background .25s;
+}
+.nav-dots button.active { background: var(--ink); transform: scale(1.4); }
+.nav-arrows {
+    position: fixed; left: 26px; bottom: 26px; display: flex; gap: 12px; z-index: 2000;
+}
+.nav-arrows button {
+    width: 40px; height: 40px; border: 1px solid var(--line); background: transparent;
+    font-family: var(--font-body); font-size: 20px; color: var(--ink); cursor: pointer;
+    transition: background .2s, color .2s;
+}
+.nav-arrows button:hover { background: var(--ink); color: var(--bg); }
+.slide-counter {
+    position: fixed; right: 26px; bottom: 26px; z-index: 2000;
+    font-family: var(--font-body); font-weight: 400; font-size: 13px;
+    letter-spacing: 2px; color: var(--taupe); font-variant-numeric: tabular-nums;
+}
+
+/* ---------- slide padding & type ---------- */
+.pad { position: relative; z-index: 2; height: 100%; padding: 100px 150px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; }
+.label {
+    font-family: var(--font-body); font-weight: 500; font-size: 22px;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--taupe); margin-bottom: 44px;
+    text-align: left; align-self: flex-start;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; color: var(--ink); line-height: 1.08; text-align: left; align-self: flex-start; }
+h1 { font-size: 150px; }           /* cover display */
+h2 { font-size: 78px; }            /* slide headline */
+h3 { font-size: 40px; }
+.headline-2 { font-size: 64px; }
+.headline-3 { font-size: 48px; }
+.body { font-family: var(--font-body); font-weight: 400; font-size: 30px; color: var(--gray); line-height: 1.55; text-align: justify; margin-left: auto; margin-right: auto; }
+.body em { color: var(--ink); font-style: italic; }
+.body strong { color: var(--ink); font-weight: 500; }
+.lead { font-size: 34px; }
+.small { font-size: 24px; }
+
+.hairline { height: 1px; background: var(--line); margin: 34px 0; width: 100%; }
+.rule-short { height: 1px; background: var(--ink); width: 300px; margin: 64px 0 60px; align-self: flex-start; }
+
+/* ---------- decorative geometry (drafting-paper compass) ---------- */
+.geo { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.geo .ring {
+    position: absolute; border: 1px solid var(--line); border-radius: 50%; opacity: 0.35;
+}
+.geo .ring::after {
+    content: ""; position: absolute; inset: 12%; border: 1px dashed var(--line);
+    border-radius: 50%; opacity: 0.7;
+}
+.geo .arc {
+    position: absolute; border: 1px dashed var(--line); border-radius: 50%; opacity: 0.25;
+}
+.geo .vline {
+    position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); opacity: 0.3;
+}
+
+/* ---------- cards & rows ---------- */
+.card {
+    border: 1px solid var(--line); background: var(--overlay);
+    padding: 44px 52px; max-width: 1500px;
+}
+.agenda-row {
+    display: flex; align-items: baseline; gap: 48px; justify-content: center;
+    padding: 30px 0; border-bottom: 1px solid var(--line); width: 100%;
+}
+.agenda-row:first-child { border-top: 1px solid var(--line); }
+.agenda-row .num { font-family: var(--font-display); font-size: 44px; color: var(--taupe); min-width: 70px; }
+.agenda-row .txt { font-family: var(--font-body); font-size: 30px; color: var(--ink); }
+
+.list { list-style: none; width: 100%; max-width: 1250px; margin: 0 auto; }
+.list li {
+    font-family: var(--font-body); font-size: 28px; color: var(--gray); line-height: 1.5;
+    padding: 16px 0; border-bottom: 1px solid var(--line); display: flex; gap: 28px; align-items: baseline;
+    text-align: left;
+}
+.list li:first-child { border-top: 1px solid var(--line); }
+.list li .n { font-family: var(--font-display); font-size: 30px; color: var(--taupe); min-width: 46px; }
+.list li strong { color: var(--ink); font-weight: 500; }
+
+/* ---------- equations ---------- */
+.equation {
+    text-align: center; color: var(--ink); margin: 40px 0;
+}
+.equation .katex { font-size: 3em; }
+
+/* ---------- tables ---------- */
+table { width: auto; margin: 0 auto; border-collapse: collapse; font-family: var(--font-body); }
+th {
+    font-weight: 500; font-size: 20px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--taupe); text-align: center; padding: 16px 22px; border-bottom: 1px solid var(--ink);
+}
+td {
+    font-size: 28px; color: var(--gray); padding: 18px 22px; border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums; text-align: center;
+}
+td:first-child { color: var(--ink); }
+td.good { color: var(--ink); }
+td.muted { color: var(--taupe); }
+tr:last-child td { border-bottom: none; }
+.footnote { font-family: var(--font-body); font-size: 22px; color: var(--taupe); margin-top: 26px; line-height: 1.5; }
+
+/* ---------- stats ---------- */
+.stats { display: flex; gap: 100px; justify-content: center; width: 100%; border-top: 1px solid var(--line); margin-top: 60px; padding-top: 44px; }
+.stats .stat { text-align: center; }
+.stats .stat .fig { font-family: var(--font-display); font-size: 72px; color: var(--ink); line-height: 1; }
+.stats .stat .cap { font-family: var(--font-body); font-size: 20px; letter-spacing: 2px; text-transform: uppercase; color: var(--taupe); margin-top: 14px; }
+
+/* ---------- figure ---------- */
+figure { margin: 20px 0; text-align: center; }
+figure img { max-height: 520px; }
+figcaption { font-family: var(--font-body); font-size: 22px; color: var(--taupe); margin-top: 18px; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; width: 100%; }
+
+/* ---------- reveal (calm, gentle fade) ---------- */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.slide.visible .reveal:nth-child(1) { transition-delay: 0.05s; }
+.slide.visible .reveal:nth-child(2) { transition-delay: 0.14s; }
+.slide.visible .reveal:nth-child(3) { transition-delay: 0.23s; }
+.slide.visible .reveal:nth-child(4) { transition-delay: 0.32s; }
+.slide.visible .reveal:nth-child(5) { transition-delay: 0.41s; }
+.slide.visible .reveal:nth-child(6) { transition-delay: 0.50s; }
+
+/* ---------- speaker notes panel ---------- */
+.notes-panel {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 3000;
+    background: var(--ink); color: var(--bg); border-top: 1px solid var(--line);
+    padding: 22px 34px; font-family: var(--font-body); font-size: 22px; line-height: 1.5;
+    max-height: 34vh; overflow: auto; display: none;
+}
+.notes-panel .nt { font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: var(--line); margin-bottom: 8px; }
+.notes-panel .who { color: #e0c9a8; font-weight: 500; }
+body.show-notes .notes-panel { display: block; }
+
+/* ---------- inline edit ---------- */
+.edit-hotzone { position: fixed; top: 0; left: 0; width: 70px; height: 70px; z-index: 4000; cursor: pointer; }
+.edit-toggle {
+    position: fixed; top: 12px; left: 12px; z-index: 4001; opacity: 0; pointer-events: none;
+    width: 40px; height: 40px; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    font-size: 18px; cursor: pointer; transition: opacity .25s;
+}
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+[contenteditable="true"] { outline: 1px dashed var(--taupe); outline-offset: 4px; }
+</style>
+</head>
+
+<body>
+<div class="deck-viewport">
+  <main class="deck-stage" id="deckStage">
+
+    <!-- ================================================== SLIDE 1 — COVER -->
+    <section class="slide">
+      <div class="geo">
+        <span class="ring" style="width:1300px;height:1300px;right:-460px;top:-560px;"></span>
+      </div>
+      <div class="pad">
+        <div class="label reveal">Orange Research · EURO/ROADEF 2026 · Keep the Flow!</div>
+        <h1 class="reveal" style="font-size:132px;max-width:1500px;">T-Adaptive Segment Routing</h1>
+        <p class="body lead reveal" style="max-width:1050px;margin-top:44px;">
+          Minimizing <strong>maximum link utilization</strong> under maintenance scenarios.
+        </p>
+        <div class="stats reveal">
+          <div class="stat"><div class="fig">λ<sub>max</sub></div><div class="cap">objective</div></div>
+          <div class="stat"><div class="fig">t = 0 → 1</div><div class="cap">two periods</div></div>
+          <div class="stat"><div class="fig">Julia</div><div class="cap">JuMP + HiGHS</div></div>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1 (≈1 min).</span> Open with the challenge: Orange Research
+        “Keep the Flow!” at EURO/ROADEF 2026. We solve the T-Adaptive Segment Routing problem —
+        choose waypoints so the most-loaded link (MLU) is as low as possible, both in normal
+        operation (t=0) and while a link is down for maintenance (t=1).
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 2 — OVERVIEW -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:900px;height:900px;right:-220px;bottom:-420px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Overview</div>
+        <h2 class="reveal">Three parts</h2>
+        <div class="rule-short reveal"></div>
+        <div class="reveal" style="width:100%;max-width:1100px;">
+          <div class="agenda-row">
+            <span class="num">01</span><span class="txt">Network &amp; split coefficients</span>
+          </div>
+          <div class="agenda-row">
+            <span class="num">02</span><span class="txt">Nominal model &amp; benchmarks</span>
+          </div>
+          <div class="agenda-row">
+            <span class="num">03</span><span class="txt">Maintenance &amp; budget</span>
+          </div>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span> Three parts: the network and ECMP split
+        coefficients, the nominal MILP and its benchmarks, then the maintenance period with the
+        reconfiguration budget.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 3 — PROBLEM -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Introduction</div>
+        <h2 class="reveal" style="max-width:1500px;">Steer traffic with waypoints</h2>
+        <div class="rule-short reveal"></div>
+        <ul class="list reveal">
+          <li><span class="n">01</span><span><strong>Segment Routing</strong> sends packets along a
+            segment path $\langle s, w_1, \dots, w_\ell, t\rangle$ through waypoints $w_k$.</span></li>
+          <li><span class="n">02</span><span>Between waypoints, routing is classic
+            <strong>shortest-path (ECMP)</strong>.</span></li>
+          <li><span class="n">03</span><span>The scheme is decided <strong>in advance</strong> over
+            $T=\{0,1\}$ — nominal, then one maintenance period with links $q(1)$ down.</span></li>
+        </ul>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span> SR lets us deviate from shortest paths by inserting
+        waypoints — flexible and cheap to deploy. We plan the routing ahead of time for two
+        periods: normal operation and a scheduled maintenance.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 4 — OBJECTIVE -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:1000px;height:1000px;left:-380px;top:-380px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Objective</div>
+        <h2 class="reveal">Minimize the most loaded link</h2>
+        <div class="rule-short reveal"></div>
+        <div class="equation reveal">
+          $$\text{mlu}=\lambda_{\max}=\max_{a,t}\ \lambda(a,t)$$
+        </div>
+        <p class="body reveal" style="max-width:1400px;">
+          Then <strong>flatten the whole load profile</strong> in decreasing order — the
+          lexicographic min-max over all arcs and periods:
+        </p>
+        <div class="equation reveal">
+          $$\text{lex}\min\ \big\{\lambda'(1),\ \lambda'(2),\ \dots,\ \lambda'(|L|)\big\}$$
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span> The measure is the maximum link utilization — the
+        load of the busiest link. We minimize it, then lexicographically push down the
+        second-busiest, third-busiest, and so on. $\lambda(a,t)$ is link load divided by capacity.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 5 — STEP 1 THEORY -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Step 01 · Theory</div>
+        <h2 class="reveal">The network graph</h2>
+        <div class="rule-short reveal"></div>
+        <ul class="list reveal">
+          <li><span class="n">01</span><span>Directed graph $G=(V,A)$, with vertices $V$ and arcs $A$.</span></li>
+          <li><span class="n">02</span><span>Each arc carries a <strong>metric</strong> $\omega(a)$
+            (shortest-path weight) and a <strong>capacity</strong> $c(a)$.</span></li>
+          <li><span class="n">03</span><span>One instance = three JSON files:
+            <em>net</em> (topology), <em>tm</em> (demands), <em>scenario</em> (intervention + budget).</span></li>
+        </ul>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span> The network is a weighted directed graph. Weights
+        define shortest paths; capacities bound how much traffic an arc can carry. Node ids are
+        remapped to Julia vertices 1…n.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 6 — STEP 1 IMPL -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-160px;bottom:-300px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Step 01 · Implementation</div>
+        <h2 class="reveal">Graph.jl &amp; the instance scale</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1fr 1.8fr; gap: 60px;">
+          <ul class="list">
+            <li><span class="n">01</span><span><strong>Simple graphs only.</strong>
+              <em>Multigraph</em> is out of scope.</span></li>
+            <li><span class="n">02</span><span>Validation rejects duplicates and parallel arcs.</span></li>
+            <li><span class="n">03</span><span>Down-link removal supports $t=1$.</span></li>
+          </ul>
+          <figure>
+            <img src="assets/plots/network_scale.svg" alt="network scale" style="max-height:600px;">
+            <figcaption>Instance scale — 20 to 400 nodes.</figcaption>
+          </figure>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1 (≈2 min).</span> We wrap Graphs.jl in a small module. Key scope
+        decision: multigraph instances are not solved — SimpleDiGraph cannot hold parallel arcs.
+        The challenge spans 20–400 nodes and up to 6000 demands.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 7 — STEP 2 -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Step 02 · Split coefficients</div>
+        <h2 class="reveal">How flow is shared on shortest paths</h2>
+        <div class="rule-short reveal"></div>
+        <div class="equation reveal">
+          $$r(i,j,a)=\dfrac{\sigma_{iu}\,\sigma_{vj}}{\sigma_{ij}}$$
+        </div>
+        <p class="body reveal" style="max-width:1400px;">
+          <strong>ECMP</strong> splits flow evenly across equal-cost shortest paths. $r(i,j,a)$ is
+          the fraction of $i\to j$ flow crossing arc $a$, from path counts $\sigma$ of one
+          Dijkstra sweep per source — <em>negligible runtime</em>.
+        </p>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1 (≈2 min).</span> Link loads need split coefficients — the
+        fraction of each node-pair's flow crossing each arc under ECMP. They factor as a ratio of
+        equal-cost path counts. One counting Dijkstra per source gives distances and counts; this
+        stage is essentially free.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 8 — MILP (1) -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;bottom:-380px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Steps 03–05 · Theory</div>
+        <h2 class="reveal">The MILP — variables &amp; path</h2>
+        <div class="rule-short reveal"></div>
+        <div class="equation reveal">
+          $$x^d_{ij}\in\{0,1\}\quad\text{segment }(i,j)\text{ used by demand }d$$
+        </div>
+        <div class="card reveal" style="margin-top:20px;">
+          <p class="body"><strong>Flow conservation</strong> — one source→target chain per demand:</p>
+          <div class="equation">$$\sum_j x^d_{ij}-\sum_j x^d_{ji}=
+            \begin{cases}+1 & i=s\\ -1 & i=t\\ 0 &\text{else}\end{cases}$$</div>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 2 (≈2 min).</span> Binary x: does demand d use segment (i,j)?
+        Flow conservation forces exactly one source→target segment chain per demand.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 9 — MILP (2) -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Steps 03–05 · Theory</div>
+        <h2 class="reveal">The MILP — load &amp; objective</h2>
+        <div class="rule-short reveal"></div>
+        <div class="card reveal">
+          <p class="body"><strong>Segment cap</strong> (≤ maxSeg segments per path):</p>
+          <div class="equation">$$\sum_{i,j} x^d_{ij}\ \le\ \text{maxSeg}$$</div>
+        </div>
+        <div class="card reveal" style="margin-top:30px;">
+          <p class="body"><strong>Arc load</strong> — routed flow ≤ capacity × MLU:</p>
+          <div class="equation">$$\sum_{d}\sum_{i,j} r(i,j,a)\,\nu(d)\,x^d_{ij}\ \le\ \lambda\,c(a)$$</div>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 2.</span> The cap bounds the number of segments. The load
+        constraint ties each arc's traffic to the objective λ — minimize λ and we minimize the MLU.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 10 — IMPL -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:900px;height:900px;right:-260px;top:-400px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Steps 03–05 · Implementation</div>
+        <h2 class="reveal">Model.jl — builder + HiGHS</h2>
+        <div class="rule-short reveal"></div>
+        <ul class="list reveal">
+          <li><span class="n">01</span><span>A fluent <strong>builder</strong>
+            (<em>set_variables! → set_flowConservation! → set_segmentCap! → set_loadBounds!</em>)
+            assembles the model.</span></li>
+          <li><span class="n">02</span><span><strong>HiGHS</strong> solves it — 1% gap, 900 s limit.</span></li>
+          <li><span class="n">03</span><span><strong>Lexicographic min-max</strong>: freeze $\lambda$, then
+            minimize the sum of the $k$ largest loads via a binary-free gadget.</span></li>
+        </ul>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 2 (≈1.5 min).</span> The model is a JuMP-style fluent builder
+        solved by HiGHS. For the lexicographic objective we use an OWA gadget — a continuous
+        threshold plus slacks gives the sum of the k largest loads without extra binaries.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 11 — PARALLEL -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Steps 03–05 · Benchmarking</div>
+        <h2 class="reveal">Parallel runs on the server</h2>
+        <div class="rule-short reveal"></div>
+        <ul class="list reveal">
+          <li><span class="n">01</span><span>One process per instance
+            (<em>solve_instance.jl</em>), results as JSON.</span></li>
+          <li><span class="n">02</span><span>A <strong>RAM-aware work queue</strong> starts an
+            instance only when memory and cores allow.</span></li>
+          <li><span class="n">03</span><span><em>collect_results.jl</em> folds everything into
+            <strong>summary.csv</strong>.</span></li>
+        </ul>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 2 (≈1 min).</span> We run the instances in parallel, gated by a
+        RAM budget and a core cap so heavy instances never OOM the machine. Results are incremental.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 12 — RESULTS TABLE -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;bottom:-280px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Steps 03–05 · Results</div>
+        <h2 class="reveal">Benchmark on Set A</h2>
+        <div class="rule-short reveal"></div>
+        <div class="reveal">
+          <table>
+            <thead><tr><th>Instance</th><th>Nodes</th><th>Arcs</th><th>Demands</th><th>Status</th><th>MLU</th><th>Gap</th></tr></thead>
+            <tbody>
+              <tr><td>setA-01</td><td>20</td><td>80</td><td>40</td><td class="good">optimal</td><td>0.93</td><td class="good">0%</td></tr>
+              <tr><td>setA-02</td><td>30</td><td>150</td><td>45</td><td class="good">optimal</td><td>0.55</td><td class="good">0%</td></tr>
+              <tr><td>setA-03</td><td>50</td><td>250</td><td>20</td><td class="good">optimal</td><td>0.94</td><td class="good">0.9%</td></tr>
+              <tr><td>setA-04</td><td>50</td><td>250</td><td>200</td><td class="muted">time limit</td><td class="muted">—</td><td class="muted">—</td></tr>
+              <tr><td>setA-07</td><td>100</td><td>500</td><td>800</td><td class="muted">time limit</td><td class="muted">—</td><td class="muted">—</td></tr>
+            </tbody>
+          </table>
+          <p class="footnote">Small instances converge to proven optimality in seconds; larger
+            ones hit the 900 s limit. Multigraph instances are out of scope.</p>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 2 (≈1.5 min).</span> Small instances (≤50 nodes, few demands)
+        solve to proven optimality fast. As demands grow, the binary variables blow up and we hit
+        the time limit — hence the need for heuristics later.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 13 — SOLVE TIME -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Steps 03–05 · Results</div>
+        <h2 class="reveal">The time-limit wall</h2>
+        <div class="rule-short reveal"></div>
+        <figure class="reveal">
+          <img src="assets/plots/solve_time.svg" alt="solve time" style="max-height:600px;">
+          <figcaption>CPU time (log scale) — the jump from optimal to time-limited is immediate.</figcaption>
+        </figure>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 2.</span> On the log scale the wall is obvious: as soon as demand
+        counts grow, we hit the time limit. This motivates metaheuristics.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 14 — STEP 6 -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:800px;height:800px;right:-260px;top:-360px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Step 06 · Maintenance</div>
+        <h2 class="reveal">The degraded graph</h2>
+        <div class="rule-short reveal"></div>
+        <div class="equation reveal">
+          $$G_1=\big(V,\ A\setminus q(1)\big)$$
+        </div>
+        <ul class="list reveal">
+          <li><span class="n">01</span><span>An intervention takes a set of links $q(1)$ down at $t=1$.</span></li>
+          <li><span class="n">02</span><span>Split coefficients are recomputed on $G_1$ → $r_1$.</span></li>
+          <li><span class="n">03</span><span>Node numbering is unchanged, so indices stay stable.</span></li>
+        </ul>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1.5 min).</span> At t=1 a scheduled maintenance takes links
+        down. We delete those arcs, keep the same node numbering, and recompute the split
+        coefficients — that gives the second period's inputs.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 15 — STEPS 7–8 -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Steps 07–08 · Budget &amp; coupled model</div>
+        <h2 class="reveal">Limit the rerouting</h2>
+        <div class="rule-short reveal"></div>
+        <div class="card reveal">
+          <p class="body"><strong>Budget</strong> — the number of waypoint changes is capped:</p>
+          <div class="equation">$$\text{dist}(P^0,P^1)=\sum_{d,i,j}\big|x^{d,1}_{ij}-x^{d,0}_{ij}\big|\ \le\ \kappa_1$$</div>
+        </div>
+        <p class="body reveal" style="margin-top:34px;">
+          One MILP over both periods, minimizing the MLU across <strong>all arcs in both periods</strong>.
+        </p>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1.5 min).</span> Rerouting costs operations effort, so the
+        challenge caps the number of segment changes with a budget κ. We linearize the absolute
+        value and solve both periods together.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 16 — T1 RESULTS -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-160px;bottom:-300px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Steps 07–08 · Results</div>
+        <h2 class="reveal">Trade-off under budget</h2>
+        <div class="rule-short reveal"></div>
+        <p class="body reveal" style="max-width:1400px;">
+          A tighter budget $\kappa_1$ allows less rerouting, so the $t=1$ load must degrade;
+          a larger budget lets the solver re-route around the failed link.
+        </p>
+        <div class="reveal" style="margin-top:30px;">
+          <table>
+            <thead><tr><th>Instance</th><th>Budget κ₁</th><th>MLU (t=0)</th><th>MLU (t=1)</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>setA-01</td><td>51</td><td class="muted">—</td><td class="muted">—</td><td class="muted">pending</td></tr>
+              <tr><td>setA-02</td><td>63</td><td class="muted">—</td><td class="muted">—</td><td class="muted">pending</td></tr>
+              <tr><td>setA-03</td><td>53</td><td class="muted">—</td><td class="muted">—</td><td class="muted">pending</td></tr>
+            </tbody>
+          </table>
+          <p class="footnote">To fill: run t1_experiments.jl, then add the numbers here.</p>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3.</span> Placeholder — the two-period sweep has not been run
+        yet. When it is, this table shows the MLU trade-off against the budget.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 17 — CONCLUSION -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Conclusion</div>
+        <h2 class="reveal">Where we stand</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal">
+          <ul class="list">
+            <li><span class="n">✓</span><span>Modular Julia architecture.</span></li>
+            <li><span class="n">✓</span><span>Exact MILP with lexicographic MLU.</span></li>
+            <li><span class="n">✓</span><span>Parallel benchmark pipeline.</span></li>
+          </ul>
+          <ul class="list">
+            <li><span class="n">→</span><span>Exact MILP stalls on large networks.</span></li>
+            <li><span class="n">→</span><span>Multigraph instances out of scope.</span></li>
+            <li><span class="n">→</span><span>Next: <strong>metaheuristics</strong> to scale.</span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1 min).</span> Solid exact baseline and a robust harness.
+        Next step is metaheuristics to scale beyond what the MILP can prove in time. Thank the
+        audience and open Q&amp;A.
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 18 — CLOSING -->
+    <section class="slide">
+      <div class="geo"><span class="ring" style="width:1200px;height:1200px;left:50%;top:50%;transform:translate(-50%,-50%);"></span></div>
+      <div class="pad" style="justify-content:center;align-items:center;text-align:center;">
+        <div class="label reveal" style="align-self:center;">Thank you</div>
+        <h2 class="reveal" style="font-size:110px;align-self:center;">Questions?</h2>
+        <p class="footnote reveal" style="margin-top:60px;">Julia 1.12 · Graphs.jl · JuMP · HiGHS · Plots.jl · KaTeX</p>
+      </div>
+      <aside class="notes">
+        <span class="who">All.</span> Q&amp;A.
+      </aside>
+    </section>
+
+  </main>
+</div>
+
+<!-- chrome -->
+<div class="nav-dots" id="navDots"></div>
+<div class="nav-arrows">
+  <button id="prevBtn" aria-label="previous">‹</button>
+  <button id="nextBtn" aria-label="next">›</button>
+</div>
+<div class="slide-counter" id="counter"></div>
+
+<!-- speaker notes -->
+<div class="notes-panel" id="notesPanel">
+  <div class="nt">Speaker notes</div>
+  <div id="notesBody"></div>
+</div>
+
+<!-- inline edit -->
+<div class="edit-hotzone" id="editHotzone" title="Edit mode (E)"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E)">✎</button>
+
+<script>
+/* ============================================================
+   CONTROLLER — fixed-stage scaling + navigation + notes + edit
+   ============================================================ */
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var stage = document.getElementById('deckStage');
+  var dotsWrap = document.getElementById('navDots');
+  var counter = document.getElementById('counter');
+  var notesPanel = document.getElementById('notesPanel');
+  var notesBody = document.getElementById('notesBody');
+  var current = 0;
+
+  /* --- stage scaling (1920x1080, letterboxed) --- */
+  function scaleStage() {
+    var f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    var x = (window.innerWidth - 1920 * f) / 2;
+    var y = (window.innerHeight - 1080 * f) / 2;
+    stage.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + f + ')';
+  }
+  scaleStage();
+  window.addEventListener('resize', scaleStage);
+
+  /* --- nav dots --- */
+  slides.forEach(function (_, i) {
+    var b = document.createElement('button');
+    b.setAttribute('aria-label', 'slide ' + (i + 1));
+    b.addEventListener('click', function () { show(i); });
+    dotsWrap.appendChild(b);
+  });
+  var dotButtons = Array.prototype.slice.call(dotsWrap.children);
+
+  function renderNotes() {
+    var n = slides[current].querySelector('.notes');
+    notesBody.innerHTML = n ? n.innerHTML : '<p>(no notes)</p>';
+  }
+
+  function show(i) {
+    if (i < 0) i = 0;
+    if (i >= slides.length) i = slides.length - 1;
+    slides[current].classList.remove('active', 'visible');
+    current = i;
+    slides[current].classList.add('active', 'visible');
+    dotButtons.forEach(function (b, k) { b.classList.toggle('active', k === current); });
+    counter.textContent = pad(current + 1) + ' / ' + pad(slides.length);
+    renderNotes();
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function next() { show(current + 1); }
+  function prev() { show(current - 1); }
+
+  /* --- keyboard --- */
+  document.addEventListener('keydown', function (e) {
+    if (e.target && e.target.isContentEditable) return;
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
+        e.preventDefault(); next(); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+        e.preventDefault(); prev(); break;
+      case 'Home': e.preventDefault(); show(0); break;
+      case 'End': e.preventDefault(); show(slides.length - 1); break;
+      case 'n': case 'N': document.body.classList.toggle('show-notes'); break;
+      case 'e': case 'E': toggleEdit(); break;
+    }
+  });
+
+  /* --- touch swipe --- */
+  var touchX = null;
+  document.addEventListener('touchstart', function (e) { touchX = e.touches[0].clientX; });
+  document.addEventListener('touchend', function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 60) { dx < 0 ? next() : prev(); }
+    touchX = null;
+  });
+
+  /* --- wheel (throttled) --- */
+  var wheelLock = false;
+  document.addEventListener('wheel', function (e) {
+    if (wheelLock) return;
+    wheelLock = true;
+    setTimeout(function () { wheelLock = false; }, 700);
+    if (e.deltaY > 0) next(); else prev();
+  }, { passive: true });
+
+  document.getElementById('prevBtn').addEventListener('click', prev);
+  document.getElementById('nextBtn').addEventListener('click', next);
+
+  /* --- inline edit --- */
+  var editToggle = document.getElementById('editToggle');
+  var hotzone = document.getElementById('editHotzone');
+  var editing = false, hideTimer = null;
+
+  function toggleEdit() {
+    editing = !editing;
+    editToggle.classList.toggle('active', editing);
+    slides.forEach(function (s) {
+      var els = s.querySelectorAll('.pad h1, .pad h2, .pad .body, .pad td, .pad figcaption, .pad .footnote, .pad .list li span');
+      els.forEach(function (el) {
+        el.setAttribute('contenteditable', editing ? 'true' : 'false');
+      });
+    });
+  }
+  editToggle.addEventListener('click', toggleEdit);
+  hotzone.addEventListener('click', toggleEdit);
+  hotzone.addEventListener('mouseenter', function () { clearTimeout(hideTimer); editToggle.classList.add('show'); });
+  hotzone.addEventListener('mouseleave', function () { hideTimer = setTimeout(function () { if (!editing) editToggle.classList.remove('show'); }, 400); });
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === 's' || e.key === 'S') && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      var blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'presentation.html';
+      a.click();
+    }
+  });
+
+  /* --- KaTeX --- */
+  if (window.renderMathInElement) {
+    document.addEventListener('DOMContentLoaded', function () {
+      slides.forEach(function (s) {
+        renderMathInElement(s, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true }
+          ],
+          throwOnError: false
+        });
+      });
+    });
+  }
+
+  show(0);
+})();
+</script>
+</body>
+</html>
