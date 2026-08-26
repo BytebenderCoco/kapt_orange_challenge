@@ -17,6 +17,7 @@
 #   MAX_RAM_GB  required fixed RAM budget in GiB
 #   MAX_PROCS   max concurrent instance solves (default: detected cores)
 #   TIME_LIMIT  per-instance solver time limit in seconds (default: 900)
+#   MAX_LEVELS  lex-descent depth per instance (default: solve_instance.jl's 8)
 #   DATA_DIR    directory holding the -net/-tm/-scenario.json files
 #   JULIA       path to the julia binary (default: `julia` on PATH)
 set -u
@@ -36,6 +37,7 @@ fi
 export RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
 export DATA_DIR="${DATA_DIR:-$REPO_ROOT/data}"
 export TIME_LIMIT="${TIME_LIMIT:-900}"
+export MAX_LEVELS="${MAX_LEVELS:-}"
 export MAX_RAM_GB="${MAX_RAM_GB:-}"
 export MAX_PROCS="${MAX_PROCS:-}"
 

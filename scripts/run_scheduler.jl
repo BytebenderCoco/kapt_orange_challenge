@@ -93,9 +93,11 @@ end
 
 # Launch one solve as a detached subprocess, its output discarded (matches the
 # old run_parallel.sh: logs are not kept). Returns the running Process.
-function launch_instance(juliaBin, name, resultsDir, dataDir, timeLimit)
+function launch_instance(juliaBin, name, resultsDir, dataDir, timeLimit, maxLevels)
     script = joinpath(REPO_ROOT, "scripts", "solve_instance.jl")
     cmd = `$juliaBin --project=$REPO_ROOT $script $name --output $resultsDir --data-dir $dataDir --time-limit $timeLimit`
+    # Only forward --max-levels when set, so an unset MAX_LEVELS keeps solve_instance.jl's default.
+    isempty(maxLevels) || (cmd = `$cmd --max-levels $maxLevels`)
     return run(pipeline(cmd; stdout = devnull, stderr = devnull); wait = false)
 end
 
@@ -104,6 +106,7 @@ function main()
     runId        = get(ENV, "RUN_ID", Dates.format(now(), "yyyymmdd-HHMMSS"))
     resultsDir   = joinpath(REPO_ROOT, "t0_results", runId)
     timeLimit    = get(ENV, "TIME_LIMIT", "900")
+    maxLevels    = get(ENV, "MAX_LEVELS", "")
     juliaBin     = get(ENV, "JULIA", "julia")
     maxProcs     = begin
         value = get(ENV, "MAX_PROCS", "")
@@ -120,7 +123,7 @@ function main()
                  for name in get_instances_from_dataDir(dataDir)]
     sort!(instances; by = item -> item.estBytes, rev = true)
 
-    println("runId=$runId maxProcs=$maxProcs ramBudget=$(round(ramBudgetBytes / 2^30; digits = 1))GiB timeLimit=$(timeLimit)s")
+    println("runId=$runId maxProcs=$maxProcs ramBudget=$(round(ramBudgetBytes / 2^30; digits = 1))GiB timeLimit=$(timeLimit)s maxLevels=$(isempty(maxLevels) ? "default" : maxLevels)")
     println("resultsDir=$resultsDir")
     for item in instances
         println("  $(item.name): est $(round(item.estBytes / 2^30; digits = 2)) GiB")
@@ -156,7 +159,7 @@ function main()
                 continue
             end
 
-            proc = launch_instance(juliaBin, name, resultsDir, dataDir, timeLimit)
+            proc = launch_instance(juliaBin, name, resultsDir, dataDir, timeLimit, maxLevels)
             runningEst[name] = estBytes
             sumRunning += estBytes
             @async begin
