@@ -174,6 +174,8 @@ function main()
         delete!(runningEst, done.name)
         sumRunning -= done.estBytes
         finished += 1
+        println("done $(done.name)$(done.ok ? "" : " (failed)") ($finished/$n)")
+        flush(stdout)
         if !done.ok
             failures += 1
             @warn "instance failed" done.name
