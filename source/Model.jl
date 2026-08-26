@@ -159,26 +159,22 @@ function set_loadBounds!(builder::AsrModelBuilder, periodInputs, demands, period
             fix(x[demand, t, i, j], 0; force = true)
         end
 
-        for edge in edges(graph)
-            u, v = src(edge), dst(edge)
+        # Iterate the load-bearing arcs directly — they are exactly keys(arcSegments),
+        # the arcs that appear in r_t. Arcs with no r entry carry no flow: their only
+        # constraint would be the no-op 0 ≤ λ·c(a), so we skip them entirely rather than
+        # scanning all of edges(graph) and emitting a trivial constraint per zero-load arc.
+        for ((u, v), segments) in arcSegments
             # c(a): capacity of arc a
             c = get_edgeData_by_graph(network, u, v).capacity
-            segments = get(arcSegments, (Int(u), Int(v)), Tuple{Int, Int, Float64}[])
-            if isempty(segments)
-                # No split coefficient references this arc → it carries no flow;
-                # 0 ≤ λ·c(a), same trivially-satisfied constraint as the dense form.
-                @constraint(model, 0 <= lambda * c)
-            else
-                load = @expression(model, sum(
-                    # r(i, j, a) · φ(d, t) · x^{d,t}_{ij}   (φ(d, t) = volumes[t + 1])
-                    coeff * demand.volumes[t + 1] * x[demand, t, i, j]
-                    for demand in demands for (i, j, coeff) in segments
-                ))
-                @constraint(model, load <= lambda * c)
-                # Stash this load-bearing arc so solve!'s lex descent can form util=load/c.
-                builder.loads[(t, (Int(u), Int(v)))] = load
-                builder.caps[(t, (Int(u), Int(v)))] = c
-            end
+            load = @expression(model, sum(
+                # r(i, j, a) · φ(d, t) · x^{d,t}_{ij}   (φ(d, t) = volumes[t + 1])
+                coeff * demand.volumes[t + 1] * x[demand, t, i, j]
+                for demand in demands for (i, j, coeff) in segments
+            ))
+            @constraint(model, load <= lambda * c)
+            # Stash this load-bearing arc so solve!'s lex descent can form util=load/c.
+            builder.loads[(t, (u, v))] = load
+            builder.caps[(t, (u, v))] = c
         end
     end
     return builder
