@@ -128,6 +128,7 @@ function get_experimentRow_from_instance(dataDir, instanceName; timeLimitSec = 9
         lowerBound = solution.lowerBound,
         gap        = solution.gap,
         cpuTime    = solution.cpuTime,
+        maxrss     = Sys.maxrss(),
     )
 end
 
@@ -145,6 +146,7 @@ function to_jsonable(row)
         lowerBound = isfinite(row.lowerBound) ? row.lowerBound : nothing,
         gap        = row.gap,
         cpuTime    = row.cpuTime,
+        maxrss     = row.maxrss,
     )
 end
 
@@ -184,11 +186,12 @@ function main()
             lowerBound = Inf,
             gap        = 0.0,
             cpuTime    = 0.0,
+            maxrss     = Sys.maxrss(),
         )
     end
 
     path = save_result_to_json(row, args.resultsDir)
-    println("$(row.instance): $(row.status) mlu=$(row.mlu) cpu=$(round(row.cpuTime, digits=2))s -> $path")
+    println("$(row.instance): $(row.status) mlu=$(row.mlu) cpu=$(round(row.cpuTime, digits=2))s maxrss=$(round(row.maxrss / 2^30, digits=2))GiB -> $path")
 
     return row.succeeded ? 0 : 1
 end

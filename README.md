@@ -85,13 +85,30 @@ rsync -avz ./ user@host:/path/to/kapt_orange_challenge/   # or git clone/pull
 ### Launch the run (does not block your terminal)
 
 ```bash
-bash scripts/run_on_server.sh            # detached via nohup (survives disconnect)
+MAX_RAM_GB=64 bash scripts/run_on_server.sh      # detached via nohup (survives disconnect)
 # or
-bash scripts/run_on_server.sh tmux       # inside a tmux session you can reattach
+MAX_RAM_GB=64 bash scripts/run_on_server.sh tmux # inside a tmux session you can reattach
 ```
 
-`run_on_server.sh` instantiates the environment and starts all 20 instances in
-parallel (bounded by `MAX_PROCS`, default `min(8, detected cores)`).
+`run_on_server.sh` instantiates the environment and starts the 20 instances with a
+**work-queue scheduler** (`scripts/run_scheduler.jl`): as soon as one solve
+finishes, the next instance starts (no fixed "waves"). Launches are gated by two
+budgets — whichever is tighter:
+
+- `MAX_RAM_GB` (required) — fixed memory budget. Each instance carries a static
+  peak-RAM estimate (linear in its model size: `base + a·nVars + b·nnz`), and a
+  new instance only starts when `sum(running estimates) + estimate(next)` fits.
+  Instances whose estimate alone exceeds the budget are skipped with a warning
+  (they would OOM the machine).
+- `MAX_PROCS` (default: detected cores, no cap) — CPU ceiling, so many tiny
+  instances don't oversubscribe the cores.
+
+Instances are queued largest-estimate-first so heavy instances start early and
+small ones backfill the leftover budget.
+
+> The RAM-estimate constants in `run_scheduler.jl` are rough defaults. Calibrate
+> them once per machine against the `maxrss` (peak RSS) that `solve_instance.jl`
+> now prints.
 
 ### Monitor and pull results incrementally
 
@@ -113,8 +130,9 @@ writes `t0_results/<runId>/summary.csv`.
 
 ### Scripts
 
-- `scripts/solve_instance.jl` — solve one instance, write one result JSON.
-- `scripts/run_parallel.sh` — run all instances in parallel with bounded concurrency.
+- `scripts/solve_instance.jl` — solve one instance, write one result JSON (+ peak RSS).
+- `scripts/run_scheduler.jl` — RAM-aware work-queue scheduler (budgets: `MAX_RAM_GB`, `MAX_PROCS`).
+- `scripts/run_parallel.sh` — thin wrapper: instantiate the env, then run the scheduler.
 - `scripts/run_on_server.sh` — non-blocking launcher (`nohup` or `tmux`).
 - `scripts/collect_results.jl` — aggregate per-instance JSONs into `summary.csv`.
 
