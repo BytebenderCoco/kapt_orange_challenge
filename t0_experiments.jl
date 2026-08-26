@@ -103,6 +103,13 @@ so the maximum link utilization `λ` (MLU) is minimized, subject to flow
 conservation, the `maxSeg` cap, and the per-arc load constraint.
 """
 
+# ╔═╡ b0000000-0000-4000-8000-00000000001b
+# maxLevels: depth of the lexicographic descent (objective 5) that solve! runs —
+# minimize the MLU (level 1), then flatten the sorted load vector below it. 1 = MLU
+# only; higher flattens more of the profile. Edit and re-run to sweep depth. See
+# Model.solve!.
+maxLevels = 8
+
 # ╔═╡ b0000000-0000-4000-8000-000000000009
 begin
     # Assemble the period-0 model with the fluent builder, then hand the caller a
@@ -121,7 +128,7 @@ begin
 end
 
 # ╔═╡ b0000000-0000-4000-8000-00000000001a
-solution = solve!(model)
+solution = solve!(model; maxLevels)
 
 # ╔═╡ b0000000-0000-4000-8000-00000000000a
 (
@@ -150,7 +157,7 @@ get_instanceNames_from_dir(dataDir) =
 # ╔═╡ b0000000-0000-4000-8000-000000000013
 # One result row for a single instance: run the whole period-0 pipeline and return its
 # graph metadata plus the solve outcome, recording each pipeline step into `events`.
-function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 900)
+function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 900, maxLevels = 8)
     record_event!(events, "loading instance data")
     graph      = get_graph_from_instance(dataDir, instanceName)
     record_event!(events, "graph calculated")
@@ -169,7 +176,8 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     set_loadBounds!(builder, periodInputs, demands, periods)
     model      = build(builder)
     record_event!(events, "solving model")
-    solution   = solve!(model)
+    # Lexicographic descent (objective 5); maxLevels caps the depth. See Model.solve!.
+    solution   = solve!(model; maxLevels)
     record_event!(events, "model solved")
     # Decode the routing scheme: per-demand waypoint lists (JSON node ids) for the
     # only period here, 0. Empty for a demand routed on shortest paths, or for the
@@ -219,7 +227,7 @@ let
     @progress for instanceName in get_instanceNames_from_dir(dataDir)
         events = NamedTuple[]
         row = try
-            get_experimentRow_from_instance(dataDir, instanceName, events)
+            get_experimentRow_from_instance(dataDir, instanceName, events; maxLevels)
         catch err
             # Keep one bad instance from aborting the whole sweep: record the failure, log
             # it, and emit a same-schema row so the saved file stays on-schema (missing
@@ -710,6 +718,7 @@ version = "5.15.0+0"
 # ╠═b0000000-0000-4000-8000-00000000000f
 # ╠═b0000000-0000-4000-8000-000000000010
 # ╟─b0000000-0000-4000-8000-000000000008
+# ╠═b0000000-0000-4000-8000-00000000001b
 # ╠═b0000000-0000-4000-8000-000000000009
 # ╠═b0000000-0000-4000-8000-00000000001a
 # ╠═b0000000-0000-4000-8000-00000000000a

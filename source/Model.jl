@@ -8,9 +8,11 @@ module Model
 # The model spans a set of `periods` (0-based). With `periods = 0:0` it is the
 # period-0-only model of steps 1–5; with `periods = 0:1` it is the two-period model
 # of steps 6–8, where the optional `add_budgetBounds!` step links the periods with
-# the reconfiguration budget β(t). A single λ bounds link utilization across all
-# arcs in all periods (the plain MLU; the spec's lexicographic min-max is reduced to
-# this first level, exactly as in step 5).
+# the reconfiguration budget β(t). λ bounds link utilization across all arcs in all
+# periods — the MLU, i.e. S₁, the top of the spec's sorted load vector. `solve!` then
+# descends the lexicographic min-max of objective (5): it freezes S₁ and, for
+# k = 2, 3, …, minimizes Sₖ = the sum of the k largest utilizations (a binary-free
+# OWA gadget), flattening the whole load profile below the MLU.
 #
 # The model is assembled with a fluent builder, mirroring how a `JuMP.Model` is
 # itself built: construct a default `AsrModelBuilder` (HiGHS optimizer, time limit,
@@ -47,6 +49,12 @@ mutable struct AsrModelBuilder
     lambda::JuMP.VariableRef
     # x^{d,t}_{ij}: the segment decision variables; nothing until set_variables!.
     x::Any
+    # (period, arc) → the arc's load expression Σ r·φ·x and its capacity c(a), stashed
+    # by set_loadBounds! so solve!'s lexicographic descent can build its Sₖ gadgets
+    # over the utilizations util(a) = load(a)/c(a). Only load-bearing arcs are kept
+    # (zero-load arcs never enter the top-k).
+    loads::Dict{Tuple{Int, Tuple{Int, Int}}, Any}
+    caps::Dict{Tuple{Int, Tuple{Int, Int}}, Float64}
 end
 
 # Frozen, solvable T-ASR model produced by `build`. Retains the variable handles so
@@ -55,6 +63,10 @@ struct AsrModel
     model::JuMP.Model
     lambda::JuMP.VariableRef
     x::Any
+    # (period, arc) → load expression and capacity; see AsrModelBuilder. Carried
+    # through so solve! can assemble the lexicographic Sₖ gadgets.
+    loads::Dict{Tuple{Int, Tuple{Int, Int}}, Any}
+    caps::Dict{Tuple{Int, Tuple{Int, Int}}, Float64}
 end
 
 # Default builder: a HiGHS-backed JuMP model with the solver configured, the λ
@@ -70,7 +82,9 @@ function AsrModelBuilder(; timeLimitSec = 900)
     @variable(model, lambda >= 0)
     @objective(model, Min, lambda)
 
-    return AsrModelBuilder(model, lambda, nothing)
+    return AsrModelBuilder(model, lambda, nothing,
+        Dict{Tuple{Int, Tuple{Int, Int}}, Any}(),
+        Dict{Tuple{Int, Tuple{Int, Int}}, Float64}())
 end
 
 # Declare the segment decision variables x^{d,t}_{ij} (1 if demand d uses segment
@@ -161,6 +175,9 @@ function set_loadBounds!(builder::AsrModelBuilder, periodInputs, demands, period
                     for demand in demands for (i, j, coeff) in segments
                 ))
                 @constraint(model, load <= lambda * c)
+                # Stash this load-bearing arc so solve!'s lex descent can form util=load/c.
+                builder.loads[(t, (Int(u), Int(v)))] = load
+                builder.caps[(t, (Int(u), Int(v)))] = c
             end
         end
     end
@@ -200,22 +217,52 @@ end
 
 # Freeze a fully-configured builder into an immutable, solvable AsrModel.
 function build(builder::AsrModelBuilder)
-    return AsrModel(builder.model, builder.lambda, builder.x)
+    return AsrModel(builder.model, builder.lambda, builder.x, builder.loads, builder.caps)
 end
 
-# Run the solver on an assembled model, mutating it with the solve result, and
-# return the solve outcome as (status, mlu, lowerBound, gap, cpuTime).
-function solve!(asrModel::AsrModel)
-    model = asrModel.model
+# One rung of the lexicographic descent: the binary-free "sum of the k largest
+# utilizations" gadget (OWA / Ogryczak–Śliwiński). Introduce a continuous threshold
+# t_k and per-arc slacks d(a) ≥ util(a) − t_k ≥ 0; then Sₖ = k·t_k + Σ d(a) equals the
+# sum of the k most-loaded links once minimized (minimizing squeezes each d(a) down to
+# max(0, util(a) − t_k), and t_k settles at the k-th largest utilization). Anonymous
+# vars so repeated levels don't clash on names. Returns the Sₖ expression for solve!
+# to minimize and then freeze.
+function add_lexLevel!(model, loads, caps, k)
+    arcs = collect(keys(loads))
+    tk = @variable(model)
+    d  = @variable(model, [a in arcs], lower_bound = 0)
+    for a in arcs
+        # d(a) ≥ util(a) − t_k,  util(a) = load(a) / c(a)
+        @constraint(model, d[a] >= loads[a] / caps[a] - tk)
+    end
+    return @expression(model, k * tk + sum(d[a] for a in arcs))
+end
 
+# Run the solver on an assembled model and return the solve outcome as
+# (status, mlu, lowerBound, gap, cpuTime). This is the lexicographic descent of
+# objective (5): level 1 is the seeded `Min λ` (⇒ mlu = S₁, the MLU); then, holding S₁
+# frozen, each deeper level k minimizes Sₖ (the sum of the k largest utilizations) via
+# add_lexLevel!'s binary-free gadget and freezes it, flattening the load profile below
+# the MLU. `mlu`/`lowerBound`/`gap` report level 1; `cpuTime` sums every `optimize!` in
+# the descent. Mutating: adds the per-level gadget vars and the freeze constraints to
+# the model, and leaves it holding the final (flattened) solution for
+# get_waypoints_by_solvedModel to decode. `maxLevels` caps the descent depth.
+function solve!(asrModel::AsrModel; maxLevels = 8, tol = 1e-6)
+    model = asrModel.model
+    loads = asrModel.loads
+    caps  = asrModel.caps
+
+    cpuTime = 0.0
+
+    # Level 1: the seeded `Min λ`. S₁ = the MLU.
     startTime = time()
     optimize!(model)
-    cpuTime = time() - startTime
+    cpuTime += time() - startTime
 
     primalStatus = primal_status(model)
-    # mlu = λ*: the optimized MLU, or Inf if no feasible point was found.
-    mlu = (primalStatus == FEASIBLE_POINT || primalStatus == NEARLY_FEASIBLE_POINT) ?
-        objective_value(model) : Inf
+    feasible = primalStatus == FEASIBLE_POINT || primalStatus == NEARLY_FEASIBLE_POINT
+    # mlu = λ*: the optimized MLU (level 1), or Inf if no feasible point was found.
+    mlu = feasible ? objective_value(model) : Inf
 
     # Lower bound may be unavailable for some statuses; fall back to 0.0.
     lowerBound = try
@@ -226,8 +273,40 @@ function solve!(asrModel::AsrModel)
 
     gap = (isfinite(mlu) && mlu > 0) ? max(0.0, 1.0 - (lowerBound / mlu)) : 0.0
 
+    # Status of the last completed solve, captured per level: a freeze added *after*
+    # the final optimize! would otherwise leave the model at OPTIMIZE_NOT_CALLED.
+    status = termination_status(model)
+
+    # Lexicographic descent (only once level 1 has a primal point). Each level *first*
+    # freezes the previous level's optimum, *then* builds Sₖ and solves — so the model
+    # always ends right after an `optimize!` (no trailing modification), leaving the
+    # solution queryable for get_waypoints_by_solvedModel. Each level adds one more
+    # `optimize!` to cpuTime. Stop early once the k-th largest load Lₖ = Sₖ − Sₖ₋₁
+    # vanishes — nothing left below to flatten.
+    if feasible
+        prevExpr = asrModel.lambda   # S₁ is bounded by λ
+        prevVal  = mlu
+        for k in 2:min(maxLevels, length(loads))
+            @constraint(model, prevExpr <= prevVal + tol)   # freeze Sₖ₋₁, then solve level k
+            Sk = add_lexLevel!(model, loads, caps, k)
+            @objective(model, Min, Sk)
+
+            startTime = time()
+            optimize!(model)
+            cpuTime += time() - startTime
+
+            (primal_status(model) == FEASIBLE_POINT ||
+             primal_status(model) == NEARLY_FEASIBLE_POINT) || break
+            status = termination_status(model)
+            sk = objective_value(model)
+            sk - prevVal < tol && break
+            prevExpr = Sk
+            prevVal  = sk
+        end
+    end
+
     return (
-        status     = termination_status(model),
+        status     = status,
         mlu        = mlu,
         lowerBound = lowerBound,
         gap        = gap,

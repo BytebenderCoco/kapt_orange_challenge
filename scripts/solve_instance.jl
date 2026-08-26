@@ -5,9 +5,14 @@
 # many instances solve in parallel (one process each) and results land
 # incrementally as each instance finishes.
 #
+# The solve is the lexicographic min-max of objective (5): solve! minimizes the MLU,
+# then descends the sorted load vector, flattening the profile below the MLU.
+# `--max-levels` caps how many levels of that descent to run (depth ≥ 1; 1 = MLU only).
+#
 # Usage:
 #   julia --project=. scripts/solve_instance.jl <instanceName> \
-#       [--output <resultsDir>] [--data-dir <dataDir>] [--time-limit <sec>]
+#       [--output <resultsDir>] [--data-dir <dataDir>] [--time-limit <sec>] \
+#       [--max-levels <k>]
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, ".."))
 
@@ -39,6 +44,7 @@ function parse_args(args)
     resultsDir   = joinpath(REPO_ROOT, "t0_results")
     dataDir      = joinpath(REPO_ROOT, "data")
     timeLimitSec = 900
+    maxLevels    = 8
     positional   = String[]
 
     # Return the value following a `--flag`, erroring clearly if it is missing
@@ -60,6 +66,9 @@ function parse_args(args)
         elseif arg == "--time-limit"
             timeLimitSec = parse(Int, option_value(arg, i))
             i += 2
+        elseif arg == "--max-levels"
+            maxLevels = parse(Int, option_value(arg, i))
+            i += 2
         elseif startswith(arg, "--")
             error("Unknown option: $arg")
         else
@@ -69,14 +78,17 @@ function parse_args(args)
     end
 
     isempty(positional) && error(
-        "Usage: solve_instance.jl <instanceName> [--output <dir>] [--data-dir <dir>] [--time-limit <sec>]"
+        "Usage: solve_instance.jl <instanceName> [--output <dir>] [--data-dir <dir>] [--time-limit <sec>] [--max-levels <k>]"
     )
+
+    maxLevels >= 1 || error("--max-levels must be >= 1 (1 = MLU only).")
 
     return (
         instanceName = positional[1],
         resultsDir   = resultsDir,
         dataDir      = dataDir,
         timeLimitSec = timeLimitSec,
+        maxLevels    = maxLevels,
     )
 end
 
@@ -107,7 +119,7 @@ end
 # One result row for a single instance: run the whole period-0 pipeline, recording
 # each step into `events`. Mirrors the notebook's get_experimentRow_from_instance so
 # both paths produce the same experimentRow (and, through Result, the same document).
-function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 900)
+function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimitSec = 900, maxLevels = 8)
     record_event!(events, "loading instance data")
     graph        = get_graph_from_instance(dataDir, instanceName)
     record_event!(events, "graph calculated")
@@ -127,7 +139,8 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     set_loadBounds!(builder, periodInputs, demands, periods)
     model        = build(builder)
     record_event!(events, "solving model")
-    solution     = solve!(model)
+    # Lexicographic descent (objective 5); maxLevels caps the depth. See Model.solve!.
+    solution     = solve!(model; maxLevels)
     record_event!(events, "model solved")
     waypoints    = get_waypoints_by_solvedModel(model, periodInputs, demands, periods)[0]
     record_event!(events, "waypoints decoded")
@@ -152,7 +165,8 @@ function main()
     events = NamedTuple[]
     row = try
         get_experimentRow_from_instance(
-            args.dataDir, args.instanceName, events; timeLimitSec = args.timeLimitSec
+            args.dataDir, args.instanceName, events;
+            timeLimitSec = args.timeLimitSec, maxLevels = args.maxLevels
         )
     catch err
         # Emit a same-schema :error row so the saved file stays on-schema; the process
