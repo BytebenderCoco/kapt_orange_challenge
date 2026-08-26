@@ -154,6 +154,7 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
         lowerBound = solution.lowerBound,
         gap        = solution.gap,
         cpuTime    = solution.cpuTime,
+        maxrss     = Sys.maxrss(),
         waypoints  = waypoints,
         events     = events,
     )
@@ -178,7 +179,7 @@ function main()
             vertices = missing, links = missing, demands = missing,
             status = :error,
             mlu = missing, lowerBound = missing, gap = missing, cpuTime = missing,
-            waypoints = missing, events = events,
+            maxrss = Sys.maxrss(), waypoints = missing, events = events,
         )
     end
 
@@ -186,7 +187,8 @@ function main()
     succeeded = row.status !== :error
     mlu       = row.mlu === missing ? "n/a" : row.mlu
     cpuTime   = row.cpuTime === missing ? 0.0 : round(row.cpuTime, digits = 2)
-    println("$(args.instanceName): $(row.status) mlu=$mlu cpu=$(cpuTime)s -> $path")
+    maxrss   = row.maxrss === missing ? 0.0 : round(row.maxrss / 2^30, digits = 2)
+    println("$(args.instanceName): $(row.status) mlu=$mlu cpu=$(cpuTime)s maxrss=$(maxrss)GiB -> $path")
 
     return succeeded ? 0 : 1
 end

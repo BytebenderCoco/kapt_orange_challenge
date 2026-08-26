@@ -22,7 +22,8 @@ export get_runDir_by_timestamp, record_event!,
 # Current schema version of the result document. Bump on any shape change:
 #   1.1.0  nested `results` block, per-demand `waypoints`, `events` log
 #   1.2.0  added results.lowerBound
-const SCHEMA_VERSION = "1.2.0"
+#   1.3.0  added results.maxrss (peak RSS in bytes, for RAM calibration)
+const SCHEMA_VERSION = "1.3.0"
 
 # A fresh run directory under `resultsDir`, named by the current local time. The
 # `yyyymmdd-HHMMSS` stamp is lexically sortable (so newest == last) and matches
@@ -69,6 +70,7 @@ function get_resultDoc_by_experimentRow(row)
             lowerBound = to_jsonNumber(row.lowerBound),
             gap        = row.gap,
             cpuTime    = row.cpuTime,
+            maxrss     = row.maxrss,
             # Per-demand waypoint lists (JSON node ids); [] = shortest-path
             # routing, null for a failed run. Not yet the srpaths.json format.
             waypoints  = row.waypoints,
