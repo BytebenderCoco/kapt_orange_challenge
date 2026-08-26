@@ -238,6 +238,14 @@ function add_lexLevel!(model, loads, caps, k)
     return @expression(model, k * tk + sum(d[a] for a in arcs))
 end
 
+# Read the current solution's value for every variable — the raw material for a MIP
+# start (warm start). Must be called right after a solve and *before* any model change:
+# JuMP invalidates result queries (and warns) once the model is modified, so values are
+# read all-at-once here, then applied with set_start_value just before the next
+# `optimize!`. Keeping read and write separate (and the write pre-solve) means no
+# modification ever trails the final solve, so the solution stays queryable afterwards.
+snapshotSolution(model) = (vars = all_variables(model); (vars, value.(vars)))
+
 # Run the solver on an assembled model and return the solve outcome as
 # (status, mlu, lowerBound, gap, cpuTime). This is the lexicographic descent of
 # objective (5): level 1 is the seeded `Min λ` (⇒ mlu = S₁, the MLU); then, holding S₁
@@ -246,8 +254,10 @@ end
 # the MLU. `mlu`/`lowerBound`/`gap` report level 1; `cpuTime` sums every `optimize!` in
 # the descent. Mutating: adds the per-level gadget vars and the freeze constraints to
 # the model, and leaves it holding the final (flattened) solution for
-# get_waypoints_by_solvedModel to decode. `maxLevels` caps the descent depth.
-function solve!(asrModel::AsrModel; maxLevels = 8, tol = 1e-6)
+# get_waypoints_by_solvedModel to decode. `maxLevels` caps the descent depth; `deepGap`
+# is the (looser) relative MIP gap for levels ≥ 2 — level 1 keeps the tight builder gap
+# so the reported MLU stays precise.
+function solve!(asrModel::AsrModel; maxLevels = 8, tol = 1e-6, deepGap = 0.05)
     model = asrModel.model
     loads = asrModel.loads
     caps  = asrModel.caps
@@ -284,12 +294,19 @@ function solve!(asrModel::AsrModel; maxLevels = 8, tol = 1e-6)
     # `optimize!` to cpuTime. Stop early once the k-th largest load Lₖ = Sₖ − Sₖ₋₁
     # vanishes — nothing left below to flatten.
     if feasible
+        # Snapshot the level-1 solution to warm-start level 2 (read now, apply pre-solve).
+        warmVars, warmVals = snapshotSolution(model)
+        # Levels ≥ 2 only flatten loads below the already-fixed MLU, so they don't need
+        # the tight level-1 gap. Loosen it to `deepGap` so the solver stops proving the
+        # precision these cosmetic levels don't require — the main descent speedup.
+        set_optimizer_attribute(model, "mip_rel_gap", deepGap)
         prevExpr = asrModel.lambda   # S₁ is bounded by λ
         prevVal  = mlu
         for k in 2:min(maxLevels, length(loads))
             @constraint(model, prevExpr <= prevVal + tol)   # freeze Sₖ₋₁, then solve level k
             Sk = add_lexLevel!(model, loads, caps, k)
             @objective(model, Min, Sk)
+            set_start_value.(warmVars, warmVals)   # MIP start from the previous level's routing
 
             startTime = time()
             optimize!(model)
@@ -297,8 +314,11 @@ function solve!(asrModel::AsrModel; maxLevels = 8, tol = 1e-6)
 
             (primal_status(model) == FEASIBLE_POINT ||
              primal_status(model) == NEARLY_FEASIBLE_POINT) || break
+            # Query all results before any further model change, then snapshot for the
+            # next level — so nothing modifies the model after this final solve.
             status = termination_status(model)
             sk = objective_value(model)
+            warmVars, warmVals = snapshotSolution(model)
             sk - prevVal < tol && break
             prevExpr = Sk
             prevVal  = sk
