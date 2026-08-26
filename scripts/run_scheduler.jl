@@ -150,6 +150,7 @@ function main()
             end
             if isempty(runningEst) && estBytes > ramBudgetBytes
                 @warn "skipping $name: estimate $(round(estBytes / 2^30; digits = 1)) GiB exceeds the $(round(ramBudgetBytes / 2^30; digits = 1)) GiB budget"
+                flush(stderr)
                 failures += 1
                 i += 1
                 continue
@@ -176,6 +177,7 @@ function main()
         if !done.ok
             failures += 1
             @warn "instance failed" done.name
+            flush(stderr)
         end
     end
 
