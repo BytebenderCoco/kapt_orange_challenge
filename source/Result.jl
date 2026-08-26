@@ -10,24 +10,32 @@ module Result
 # (`get_runDir_by_timestamp`), one per instance, each the moment it finishes — so
 # a cancelled sweep keeps whatever already completed. The document shape defined
 # here is the single source of truth shared by the notebook (`t0_experiments.jl`)
-# and the headless `scripts/solve_instance.jl`; `scripts/collect_results.jl`
+# and the headless `scripts/t0_solve_instance.jl`; `scripts/collect_results.jl`
 # reads it back into the summary CSV.
 
 using Dates
 using JSON3
 
 export get_runDir_by_timestamp, record_event!,
-    get_resultDoc_by_experimentRow, save_resultDoc_to_json
+    get_resultDoc_by_experimentRow, save_resultDoc_to_json,
+    SCHEMA_VERSION, SCHEMA_VERSION_V2
 
-# Current schema version of the result document. Bump on any shape change:
+# Schema versions of the result document. Bump on any shape change:
 #   1.1.0  nested `results` block, per-demand `waypoints`, `events` log
 #   1.2.0  added results.lowerBound
 #   1.3.0  added results.maxrss (peak RSS in bytes, for RAM calibration)
+#   2.0.0  multi-period: results.waypoints becomes a period → per-demand map
+#          (as t1_experiments.jl produces); every other field is unchanged.
+# SCHEMA_VERSION is the default single-period (period-0) document; pass
+# `version = SCHEMA_VERSION_V2` to get_resultDoc_by_experimentRow for the
+# two-period shape. The two differ only in the `version` label and the
+# `waypoints` shape — which flows straight through `row.waypoints` either way.
 const SCHEMA_VERSION = "1.3.0"
+const SCHEMA_VERSION_V2 = "2.0.0"
 
 # A fresh run directory under `resultsDir`, named by the current local time. The
 # `yyyymmdd-HHMMSS` stamp is lexically sortable (so newest == last) and matches
-# the RUN_ID that scripts/run_parallel.sh mints with `date +%Y%m%d-%H%M%S`, so
+# the RUN_ID that scripts/t0_execution.sh mints with `date +%Y%m%d-%H%M%S`, so
 # notebook runs and parallel runs share one naming scheme. Minted once per sweep
 # and reused for every instance's file; the directory is NOT created here — the
 # first save_resultDoc_to_json mkpaths it, so a sweep cancelled before any
@@ -53,12 +61,18 @@ to_jsonNumber(x) = (x === missing || x === nothing || !isfinite(x)) ? nothing : 
 # Shape one experimentRow into the canonical, JSON-safe result document: a schema
 # `version`, the instance `index`, a `succeeded` flag (false for the :error
 # sentinel rows the callers' try/catch produce), a nested `results` block of the
-# solve metrics, the per-demand routing `waypoints`, and the `events` log. This
-# is a pure in-memory transform (`by`, not `from`): nothing is read or written.
-# JSON has no native enum, so the solver status is written as its name string.
-function get_resultDoc_by_experimentRow(row)
+# solve metrics, the routing `waypoints`, and the `events` log. This is a pure
+# in-memory transform (`by`, not `from`): nothing is read or written. JSON has no
+# native enum, so the solver status is written as its name string.
+#
+# `version` selects the schema: the default SCHEMA_VERSION is the single-period
+# (period-0) document whose `waypoints` is a per-demand list; pass
+# SCHEMA_VERSION_V2 for the two-period document whose `waypoints` is a period →
+# per-demand map. The builder is otherwise identical — the differing waypoints
+# shape rides through `row.waypoints` unchanged.
+function get_resultDoc_by_experimentRow(row; version = SCHEMA_VERSION)
     return (
-        version   = SCHEMA_VERSION,
+        version   = version,
         instance  = get_index_by_instanceName(row.instance),
         succeeded = row.status !== :error,
         results   = (
@@ -70,8 +84,9 @@ function get_resultDoc_by_experimentRow(row)
             lowerBound = to_jsonNumber(row.lowerBound),
             gap        = row.gap,
             cpuTime    = row.cpuTime,
-            maxrss     = row.maxrss,
-            # Per-demand waypoint lists (JSON node ids); [] = shortest-path
+            maxrss     = to_jsonNumber(row.maxrss),
+            # Waypoint lists of JSON node ids: per-demand under SCHEMA_VERSION,
+            # a period → per-demand map under SCHEMA_VERSION_V2. [] = shortest-path
             # routing, null for a failed run. Not yet the srpaths.json format.
             waypoints  = row.waypoints,
         ),

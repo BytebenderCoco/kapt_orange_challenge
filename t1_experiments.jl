@@ -22,6 +22,8 @@ begin
     using .Scenario
     include(joinpath(@__DIR__, "source", "Model.jl"))
     using .Model
+    include(joinpath(@__DIR__, "source", "Result.jl"))
+    using .Result
 end
 
 # ╔═╡ c0000000-0000-4000-8000-000000000001
@@ -152,8 +154,10 @@ periods** is minimized, subject to flow conservation, the `maxSeg` cap, the
 per-arc load constraint (with `r₀`/`r₁`), and the **budget** `β(1)` capping the
 total rerouting between periods.
 
-The objective is single-level MLU minimization — the spec's lexicographic min-max
-is reduced to its first level, exactly as in step 5.
+The objective follows the spec's lexicographic min-max (5) to a **depth of 3**:
+minimize the MLU (level 1), then flatten the two next-most-loaded rungs of the
+sorted load vector (levels 2–3) across all arcs in both periods. `solve!` runs the
+descent; `maxLevels = 3` caps it.
 """
 
 # ╔═╡ c0000000-0000-4000-8000-000000000009
@@ -175,7 +179,7 @@ begin
 end
 
 # ╔═╡ c0000000-0000-4000-8000-00000000001a
-solution = solve!(model)
+solution = solve!(model; maxLevels = 3)
 
 # ╔═╡ c0000000-0000-4000-8000-00000000000a
 (
@@ -205,11 +209,6 @@ same functions as the single-instance walkthrough above — nothing is duplicate
 get_instanceNames_from_dir(dataDir) =
     sort([replace(f, "-net.json" => "")
           for f in readdir(dataDir) if endswith(f, "-net.json")])
-
-# ╔═╡ c0000000-0000-4000-8000-000000000019
-# Append one timestamped event to an instance's log (info by default, :error on failure).
-record_event!(events, message; level = :info) =
-    push!(events, (time = Dates.format(now(), "yyyy-mm-ddTHH-MM-SS"), level, message))
 
 # ╔═╡ c0000000-0000-4000-8000-000000000013
 # One result row for a single instance: run the whole two-period pipeline (build G₀
@@ -241,7 +240,7 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     add_budgetBounds!(builder, demands, n, Dict(1 => budget1), periods)
     model         = build(builder)
     record_event!(events, "solving model")
-    solution      = solve!(model)
+    solution      = solve!(model; maxLevels = 3)
     record_event!(events, "model solved")
     # Decode the routing scheme: per-period, per-demand waypoint lists (JSON node
     # ids). Empty for a demand routed on shortest paths, or for the whole run if
@@ -249,15 +248,19 @@ function get_experimentRow_from_instance(dataDir, instanceName, events; timeLimi
     waypoints     = get_waypoints_by_solvedModel(model, periodInputs, demands, periods)
     record_event!(events, "waypoints decoded")
     return (
-        instance  = instanceName,
-        vertices  = nv(graph.graph),
-        links     = ne(graph.graph),
-        demands   = length(demands),
-        status    = solution.status,
-        mlu       = solution.mlu,
-        gap       = solution.gap,
-        cpuTime   = solution.cpuTime,
-        waypoints = waypoints,
+        instance   = instanceName,
+        vertices   = nv(graph.graph),
+        links      = ne(graph.graph),
+        demands    = length(demands),
+        status     = solution.status,
+        mlu        = solution.mlu,
+        lowerBound = solution.lowerBound,
+        gap        = solution.gap,
+        cpuTime    = solution.cpuTime,
+        # The notebook path does not profile RSS; maxrss is null in the v2 doc.
+        maxrss     = missing,
+        waypoints  = waypoints,
+        events     = events,
     )
 end
 
@@ -270,57 +273,25 @@ finishes**, not in one final batch — so cancelling the notebook keeps every in
 that already completed. Each file holds the instance's index, whether the run
 succeeded, the solve metrics, the per-period routing `waypoints` (a map period →
 per-demand lists), and an `events` log recording each pipeline step (and any
-failure). This is the write-side mirror of the `get_*_from_instance` readers.
+failure).
+
+The document shape and the write itself live in the shared `Result` module — the
+same `get_resultDoc_by_experimentRow` / `save_resultDoc_to_json` the period-0 sweep
+and the headless `scripts/t0_solve_instance.jl` use, here with `version =
+SCHEMA_VERSION_V2` for the two-period schema (per-period `waypoints`; `maxrss` is
+`null`, as the notebook path does not profile RSS). This is the write-side mirror of
+the `get_*_from_instance` readers.
 """
 
 # ╔═╡ c0000000-0000-4000-8000-000000000016
 t1ResultsDir = joinpath(@__DIR__, "t1_results")
 
-# ╔═╡ c0000000-0000-4000-8000-000000000017
-begin
-    # "01" from "setA-01": the instance's index within its set (the trailing -NN, no dash).
-    get_index_by_instanceName(instanceName) = replace(instanceName, r"^.*-" => "")
-
-    # Persist one experiment row to t1_results/<timestamp>/<index>.json. The file carries a
-    # schema `version`, the instance `index`, a `succeeded` flag (false for the rows the
-    # try/catch turned into :error), the solve metrics, the per-period routing `waypoints`,
-    # and the `events` log. Writing per row as the sweep goes (not one final batch) means a
-    # cancelled run keeps every instance already finished. JSON has no Inf and no native
-    # enum, so a non-finite mlu is written as null and the solver status as its name string.
-    function save_experimentRow_to_json(row, runDir, events)
-        index = get_index_by_instanceName(row.instance)
-        doc = (
-            version   = "2.0.0",
-            instance  = index,
-            succeeded = row.status !== :error,
-            results   = (
-                vertices  = row.vertices,
-                links     = row.links,
-                demands   = row.demands,
-                status    = string(row.status),
-                mlu       = (row.mlu === missing || isfinite(row.mlu)) ? row.mlu : nothing,
-                gap       = row.gap,
-                cpuTime   = row.cpuTime,
-                # Per-period, per-demand waypoint lists (JSON node ids), keyed by
-                # period: waypoints["0"]/["1"]. [] = shortest-path routing; null for
-                # a failed run. Not yet the srpaths.json format.
-                waypoints = row.waypoints,
-            ),
-            events    = events,
-        )
-        open(joinpath(runDir, "$index.json"), "w") do io
-            JSON3.pretty(io, JSON3.write(doc))
-        end
-    end
-end
-
 # ╔═╡ c0000000-0000-4000-8000-000000000014
 let
-    # One run directory per sweep; each instance's file lands here the moment it finishes,
-    # so cancelling the notebook keeps whatever already completed.
-    timestamp = Dates.format(now(), "yyyy-mm-ddTHH-MM")
-    runDir    = joinpath(t1ResultsDir, timestamp)
-    mkpath(runDir)
+    # One run directory per sweep, minted once and reused; each instance's file lands here
+    # the moment it finishes (the directory is created lazily by the first save), so
+    # cancelling the notebook keeps whatever already completed.
+    runDir = get_runDir_by_timestamp(t1ResultsDir)
     @progress for instanceName in get_instanceNames_from_dir(dataDir)
         events = NamedTuple[]
         row = try
@@ -334,12 +305,14 @@ let
             (
                 instance = instanceName,
                 vertices = missing, links = missing, demands = missing,
-                status   = :error,
-                mlu = missing, gap = missing, cpuTime = missing,
-                waypoints = missing,
+                status = :error,
+                mlu = missing, lowerBound = missing, gap = missing, cpuTime = missing,
+                maxrss = missing, waypoints = missing, events = events,
             )
         end
-        save_experimentRow_to_json(row, runDir, events)
+        # Two-period schema (v2): per-period waypoints. Same shared Result writer as the
+        # period-0 sweep and scripts/t0_solve_instance.jl.
+        save_resultDoc_to_json(get_resultDoc_by_experimentRow(row; version = SCHEMA_VERSION_V2), runDir)
     end
     runDir
 end
@@ -827,11 +800,9 @@ version = "5.15.0+0"
 # ╠═c0000000-0000-4000-8000-000000000027
 # ╟─c0000000-0000-4000-8000-000000000011
 # ╠═c0000000-0000-4000-8000-000000000012
-# ╠═c0000000-0000-4000-8000-000000000019
 # ╠═c0000000-0000-4000-8000-000000000013
 # ╟─c0000000-0000-4000-8000-000000000015
 # ╠═c0000000-0000-4000-8000-000000000016
-# ╠═c0000000-0000-4000-8000-000000000017
 # ╠═c0000000-0000-4000-8000-000000000014
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
