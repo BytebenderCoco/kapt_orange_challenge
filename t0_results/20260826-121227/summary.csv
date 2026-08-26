@@ -1,0 +1,11 @@
+instance,succeeded,vertices,links,demands,status,mlu,lowerBound,gap,cpuTime
+setA-01,true,20,80,40,OPTIMAL,0.929383899821109,0.929383899821109,0,3.945758819580078
+setA-02,true,30,150,45,OPTIMAL,0.5485780439121757,0.5485780439121757,0,89.04842710494995
+setA-03,true,50,250,20,OPTIMAL,0.9435434146341662,0.9346752457047444,0.009398792670139433,16.575166940689087
+setA-04,true,50,250,200,TIME_LIMIT,,0.45906780303030303,0,919.9200119972229
+setA-05,false,,,,error,,,0,0
+setA-06,false,,,,error,,,0,0
+setA-08,false,,,,error,,,0,0
+setA-10,false,,,,error,,,0,0
+setA-12,false,,,,error,,,0,0
+setA-14,false,,,,error,,,0,0

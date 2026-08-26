@@ -1,0 +1,13 @@
+{
+    "instance": "setA-02",
+    "succeeded": true,
+    "vertices": 30,
+    "links": 150,
+    "demands": 45,
+    "status": "OPTIMAL",
+    "mlu": 0.5485780439121757,
+    "lowerBound": 0.5485780439121757,
+    "gap": 0,
+    "cpuTime": 89.04842710494995,
+    "maxrss": 1233809408
+}
