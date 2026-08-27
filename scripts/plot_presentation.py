@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLOTS = os.path.join(ROOT, "presentation", "assets", "plots")
 DATA = os.path.join(ROOT, "data")
-T0_RUN = os.path.join(ROOT, "t0_results", "20260826-080344")
+T0_RUN = os.path.join(ROOT, "t0_results", "20260827-084848")
 T1_RUN = os.path.join(ROOT, "t1_results", "t1-overnight")
 T0_LEX = os.path.join(ROOT, "t0_results", "t0-overnight")
 
@@ -77,18 +77,25 @@ def index(name):
 # ---------------------------------------------------------------------------
 
 def read_run(run_dir):
-    """Return a list of dicts sorted by instance index for one run directory."""
+    """Return a list of dicts sorted by instance index for one run directory.
+
+    `mlu` is the *true* final MLU: the top of the sorted loadVector when present
+    (the `mlu` field is a stale level-1 lambda once the lex descent has run),
+    falling back to the `mlu` field otherwise.
+    """
     rows = []
     for f in glob.glob(os.path.join(run_dir, "*.json")):
         doc = json.load(open(f))
         r = doc.get("results", {})
+        lv = r.get("loadVector")
+        lv_top = max((e["util"] for e in lv), default=None) if lv else None
         rows.append({
             "instance": int(doc.get("instance") or index(f)),
             "vertices": r.get("vertices"),
             "links": r.get("links"),
             "demands": r.get("demands"),
             "status": r.get("status"),
-            "mlu": r.get("mlu"),
+            "mlu": lv_top if lv_top is not None else r.get("mlu"),
             "lowerBound": r.get("lowerBound"),
             "gap": r.get("gap"),
             "cpuTime": r.get("cpuTime"),
@@ -159,7 +166,7 @@ def make_benchmark_mlu():
     for r in rows:
         y = r["mlu"] if r["mlu"] is not None else r["lowerBound"]
         heights.append(y if y is not None else 0.0)
-        opt = r["status"] == "OPTIMAL"
+        opt = (r["gap"] is not None) and (r["gap"] < 1e-3)
         fills.append(INK if opt else LINE)
         outline.append(not opt)
     xs = list(range(len(rows)))
@@ -169,8 +176,8 @@ def make_benchmark_mlu():
                fill=not o, width=0.7)
     for x, r in enumerate(rows):
         if r["mlu"] is not None:
-            if r["gap"] is not None and r["gap"] < 1e-4:
-                ann = "gap 0%"
+            if r["gap"] is not None and r["gap"] < 1e-3:
+                ann = "optimal"
             elif r["gap"] is not None:
                 ann = "gap %.0f%%" % round(100 * r["gap"])
             else:
@@ -192,7 +199,7 @@ def make_benchmark_mlu():
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
     fig.tight_layout()
-    fig.savefig(os.path.join(PLOTS, "benchmark_mlu.svg"))
+    fig.savefig(os.path.join(PLOTS, "benchmark_mlu.svg"), bbox_inches="tight")
     plt.close(fig)
 
 
@@ -207,7 +214,7 @@ def make_solve_time():
     ax.scatter([x for x, o in zip(xs, ok) if not o], [y for y, o in zip(ys, ok) if not o],
                facecolors="white", edgecolors=LINE, linewidths=2, s=28, zorder=3,
                label="time limit")
-    ax.axhline(900, color=GRAY, linestyle="--", linewidth=1.5, label="time limit (900 s)")
+    ax.axhline(1800, color=GRAY, linestyle="--", linewidth=1.5, label="time limit (1800 s / level)")
     ax.set_yscale("log")
     ax.set_xticks(xs)
     ax.set_xticklabels(["setA-%02d" % x for x in xs], fontsize=8)

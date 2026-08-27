@@ -577,12 +577,12 @@ segmentChange = <span class="kw">@variable</span>(model,
       <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;bottom:-280px;"></span></div>
       <div class="pad">
         <div class="label reveal">Results · Nominal period t = 0</div>
-        <h2 class="reveal">Optimal on small, wall on large</h2>
+        <h2 class="reveal">Optimal on small, feasible on 04–05</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.15fr 1fr; gap: 50px; align-items: center;">
           <figure>
             <img src="assets/plots/benchmark_mlu.svg" alt="t0 MLU benchmark" style="max-height:540px;">
-            <figcaption>MLU per instance — solid = proven optimal, outline = time limit.</figcaption>
+            <figcaption>MLU per instance — solid = proven optimal, outline = feasible (gap).</figcaption>
           </figure>
           <div>
             <table class="table-compact" style="width:100%;">
@@ -590,19 +590,19 @@ segmentChange = <span class="kw">@variable</span>(model,
               <tbody>
                 <tr><td>setA-01</td><td>20</td><td>40</td><td class="good">optimal</td><td>0.93</td><td class="good">0%</td></tr>
                 <tr><td>setA-02</td><td>30</td><td>45</td><td class="good">optimal</td><td>0.55</td><td class="good">0%</td></tr>
-                <tr><td>setA-03</td><td>50</td><td>20</td><td class="good">optimal</td><td>0.94</td><td class="good">0.9%</td></tr>
-                <tr><td>setA-04</td><td>50</td><td>200</td><td class="muted">time limit</td><td class="muted">—</td><td class="muted">—</td></tr>
-                <tr><td>setA-05</td><td>100</td><td>100</td><td class="muted">time limit</td><td>0.17</td><td>32%</td></tr>
+                <tr><td>setA-03</td><td>50</td><td>20</td><td class="good">optimal</td><td>0.94</td><td class="good">0%</td></tr>
+                <tr><td>setA-04</td><td>50</td><td>200</td><td class="muted">feasible</td><td>0.48</td><td>34%</td></tr>
+                <tr><td>setA-05</td><td>100</td><td>100</td><td class="muted">feasible</td><td>0.12</td><td>22%</td></tr>
               </tbody>
             </table>
-            <p class="footnote">setA-06…15 also hit the limit (see chart).</p>
+            <p class="footnote">setA-06+ still hit TIME_LIMIT.</p>
           </div>
         </div>
       </div>
       <aside class="notes">
         <span class="who">Speaker 2 (≈1.5 min).</span> The three small instances solve to proven
-        optimality in seconds. From setA-04 (200 demands) onward we hit the 900 s limit; most return
-        no feasible point. See the chart for the full sweep.
+        optimality. New run: setA-04 and setA-05 now reach feasible solutions (MLU 0.48 / 0.12),
+        but stay at 34% / 22% gap — not proven optimal. From setA-06 on we still hit the limit.
       </aside>
     </section>
 
@@ -611,16 +611,17 @@ segmentChange = <span class="kw">@variable</span>(model,
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Results · Nominal period</div>
-        <h2 class="reveal">The time-limit wall</h2>
+        <h2 class="reveal">The TIME_LIMIT wall</h2>
         <div class="rule-short reveal"></div>
         <figure class="reveal">
           <img src="assets/plots/solve_time.svg" alt="solve time" style="max-height:560px;">
-          <figcaption>CPU time (log scale) — the jump from optimal to time-limited is immediate.</figcaption>
+          <figcaption>CPU time (log scale) — 01–02 solve in seconds, 03–05 take thousands of seconds.</figcaption>
         </figure>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2.</span> On a log scale the wall is obvious: as demand counts grow
-        the solve jumps straight to the 900 s limit.
+        <span class="who">Speaker 2.</span> On a log scale the wall is obvious: 01 and 02 finish in
+        seconds, then 03–05 jump to thousands of seconds (multiple 1800 s lex-descent levels), and
+        06+ never finish within the budget.
       </aside>
     </section>
 
@@ -703,15 +704,15 @@ segmentChange = <span class="kw">@variable</span>(model,
         <h2 class="reveal">The exact model hits a wall</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">•</span><span>Small instances solve optimally in <strong>2.5 / 68 / 12 s</strong>.</span></li>
-          <li><span class="n">•</span><span>From <strong>setA-04</strong> (50 nodes, 200 demands) the solver hits the limit with <strong>no feasible point</strong>.</span></li>
-          <li><span class="n">•</span><span>Root cause: <strong>~|D|·|V|²</strong> binaries — up to <strong>22.4M</strong> for setA-10.</span></li>
+          <li><span class="n">•</span><span>01–03 solve to <strong>proven-optimal MLU</strong> (0.93 / 0.55 / 0.94).</span></li>
+          <li><span class="n">•</span><span>04–05 now reach <strong>feasible</strong> solutions (0.48 / 0.12), but stay at <strong>34% / 22% gap</strong>.</span></li>
+          <li><span class="n">•</span><span>06+ still hit the limit — root cause: <strong>~|D|·|V|²</strong> binaries, up to <strong>22.4M</strong>.</span></li>
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> The exact MILP does not scale. The binary count
-        explodes with demands times node-pairs squared, so branch-and-bound cannot even find a first
-        feasible point on the larger instances within the limit.
+        <span class="who">Speaker 3 (≈1 min).</span> The exact MILP scales a little further than
+        before — 04 and 05 now get feasible points — but still cannot prove optimality beyond 03,
+        and 06+ never finish. The binary count grows with demands times node-pairs squared.
       </aside>
     </section>
 
@@ -746,14 +747,15 @@ segmentChange = <span class="kw">@variable</span>(model,
           <table>
             <thead><tr><th>Result</th><th>Reported</th><th>Actual</th></tr></thead>
             <tbody>
+              <tr><td>t0 · setA-04</td><td class="bad">MLU 0.69, “optimal”</td><td>MLU 0.48 (from load vector)</td></tr>
               <tr><td>t1 · setA-02</td><td class="bad">MLU 1.10, gap 100%, “optimal”</td><td>MLU 0.94 (from load vector)</td></tr>
-              <tr><td>t1 · setA-01</td><td class="bad">“time limit”</td><td>MLU 0.93 — actually proven optimal</td></tr>
+              <tr><td>t1 · setA-01</td><td class="bad">TIME_LIMIT</td><td>MLU 0.93 — actually proven optimal</td></tr>
             </tbody>
           </table>
           <p class="body reveal" style="max-width:1400px;margin-top:30px;">
             The <strong>mlu / gap</strong> fields are unreliable after the lexicographic descent: the MLU is a stale
             level-1 λ and <strong>objective_bound returns 0</strong> once the model is modified. The saved
-            <strong>loadVector</strong> is the ground truth.
+            <strong>loadVector</strong> is the ground truth — all our tables read it.
           </p>
         </div>
       </div>
