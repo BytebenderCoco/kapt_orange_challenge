@@ -278,16 +278,14 @@ body.show-notes .notes-panel { display: block; }
 
     <!-- ====== SLIDE 01 — Cover ====== -->
 
-    <!-- ====== SLIDE 01 — T-Adaptive Segment Routing ====== -->
-
 <section class="slide">
       <div class="pad" style="justify-content:flex-start;align-items:flex-start;text-align:left;">
         <img class="othr-logo reveal" src="assets/othr-logo.png" alt="OTH Regensburg">
         <div class="title-block reveal" style="margin-top:200px;">
           <div class="identbar"></div>
           <div class="ttitle">
-            <h1>T-Adaptive Segment Routing</h1>
-            <p class="subtitle">Minimizing maximum link utilization under maintenance scenarios.</p>
+            <p class="reveal" style="font-family:var(--font-display);font-size:52px;font-weight:400;color:var(--ink);line-height:1.15;text-align:left;">Our solution to the</p>
+            <h1 style="margin-top:6px;">T-ASR Problem</h1>
           </div>
         </div>
         <div class="title-meta reveal" style="margin-top:90px;">
@@ -309,14 +307,14 @@ body.show-notes .notes-panel { display: block; }
       <div class="geo"><span class="ring" style="width:900px;height:900px;right:-220px;bottom:-420px;"></span></div>
       <div class="pad">
         <div class="label reveal">The challenge</div>
-        <h2 class="reveal">Keep the flow, even when a link goes down</h2>
+        <h2 class="reveal">Optimize a changing network,<br>on a budget</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.25fr 1fr; gap: 60px; align-items: center;">
           <ul class="list">
-            <li><span class="n">•</span><span>An IP/MPLS backbone with a <strong>forecast traffic matrix</strong>.</span></li>
-            <li><span class="n">•</span><span><strong>Segment Routing</strong>: packets follow waypoints; between them, shortest-path <strong>ECMP</strong>.</span></li>
-            <li><span class="n">•</span><span>Plan the routing <strong>in advance</strong> — nominal t=0, then a maintenance t=1 with links q(1) down.</span></li>
-            <li><span class="n">•</span><span>Goal: keep the <strong>maximum link utilization</strong> (MLU) as low as possible.</span></li>
+            <li><span class="n">•</span><span>Optimize traffic over a telecom network.</span></li>
+            <li><span class="n">•</span><span>Traffic is controlled by the routers.</span></li>
+            <li><span class="n">•</span><span>Our option to intervene: waypoints the traffic has to pass.</span></li>
+            <li><span class="n">•</span><span>Goal: optimal load distribution.</span></li>
           </ul>
           <figure>
             <img src="assets/plots/network_scale.svg" alt="instance scale" style="max-height:500px;">
@@ -337,7 +335,7 @@ body.show-notes .notes-panel { display: block; }
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Architecture</div>
-        <h2 class="reveal">How we approached it</h2>
+        <h2 class="reveal">Two notebooks, shared modules</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
           <div class="tree">
@@ -363,12 +361,12 @@ body.show-notes .notes-panel { display: block; }
 
 
 
-    <!-- ====== SLIDE 04 — Architecture · Step 1 ====== -->
+    <!-- ====== SLIDE 04 — Step 1 · Architecture ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Architecture · Step 1</div>
+        <div class="label reveal">Step 1 · Architecture</div>
         <h2 class="reveal">Build the graph G₀</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
@@ -396,12 +394,12 @@ body.show-notes .notes-panel { display: block; }
 
 
 
-    <!-- ====== SLIDE 05 — Architecture · Step 2 ====== -->
+    <!-- ====== SLIDE 05 — Step 2 · Architecture ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Architecture · Step 2</div>
+        <div class="label reveal">Step 2 · Architecture</div>
         <h2 class="reveal">Compute the split coefficients r</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
@@ -430,12 +428,12 @@ body.show-notes .notes-panel { display: block; }
 
 
 
-    <!-- ====== SLIDE 06 — Architecture · Step 3 ====== -->
+    <!-- ====== SLIDE 06 — Step 3 · Architecture ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Architecture · Step 3</div>
+        <div class="label reveal">Step 3 · Architecture</div>
         <h2 class="reveal">Derive the model parameters</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
@@ -466,13 +464,13 @@ body.show-notes .notes-panel { display: block; }
 
 
 
-    <!-- ====== SLIDE 07 — Architecture · Step 4 ====== -->
+    <!-- ====== SLIDE 07 — Step 4 · Architecture ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Architecture · Step 4</div>
-        <h2 class="reveal">Implement the period-0 model</h2>
+        <div class="label reveal">Step 4 · Architecture</div>
+        <h2 class="reveal">Implement the model for t = 0</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
           <div class="tree">
@@ -504,12 +502,12 @@ body.show-notes .notes-panel { display: block; }
 
 
 
-    <!-- ====== SLIDE 08 — Model · Decision variables ====== -->
+    <!-- ====== SLIDE 08 — Step 4 · Decision variables ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Model · Decision variables</div>
+        <div class="label reveal">Step 4 · Decision variables</div>
         <h2 class="reveal">One binary per segment</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal">
@@ -527,12 +525,12 @@ body.show-notes .notes-panel { display: block; }
 
 
 
-    <!-- ====== SLIDE 09 — Constraint (1) · Flow conservation ====== -->
+    <!-- ====== SLIDE 09 — Step 4 · Constraint (1) · Flow conservation ====== -->
 
 <section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;right:-260px;top:-360px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Constraint (1) · Flow conservation</div>
+        <div class="label reveal">Step 4 · Constraint (1) · Flow conservation</div>
         <h2 class="reveal">One path per demand</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal">
@@ -556,12 +554,12 @@ body.show-notes .notes-panel { display: block; }
 
 
 
-    <!-- ====== SLIDE 10 — Constraint (2) · Segment cap ====== -->
+    <!-- ====== SLIDE 10 — Step 4 · Constraint (2) · Segment cap ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Constraint (2) · Segment cap</div>
+        <div class="label reveal">Step 4 · Constraint (2) · Segment cap</div>
         <h2 class="reveal">At most maxSeg segments</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal">
@@ -583,12 +581,12 @@ body.show-notes .notes-panel { display: block; }
 
 
 
-    <!-- ====== SLIDE 11 — Constraint (3) · Load ====== -->
+    <!-- ====== SLIDE 11 — Step 4 · Constraint (3) · Load ====== -->
 
 <section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;bottom:-380px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Constraint (3) · Load</div>
+        <div class="label reveal">Step 4 · Constraint (3) · Load</div>
         <h2 class="reveal">Routed flow ≤ capacity × MLU</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal">
@@ -611,13 +609,13 @@ load = <span class="kw">@expression</span>(model, sum(
 
 
 
-    <!-- ====== SLIDE 12 — Objective (5) · Lexicographic min-max ====== -->
+    <!-- ====== SLIDE 12 — Step 4 · Objective (5) · Lexicographic min-max ====== -->
 
 <section class="slide">
       <div class="geo"><span class="ring" style="width:900px;height:900px;right:-260px;top:-400px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Objective (5) · Lexicographic min-max</div>
-        <h2 class="reveal">Flatten the whole load profile</h2>
+        <div class="label reveal">Step 4 · Objective (5) · Lexicographic min-max</div>
+        <h2 class="reveal">Minimize the MLU, then flatten the loads</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.25fr 1fr; gap: 60px; align-items: start;">
           <div>
@@ -708,19 +706,19 @@ load = <span class="kw">@expression</span>(model, sum(
 
 
 
-    <!-- ====== SLIDE 15 — Step 6 · Maintenance ====== -->
+    <!-- ====== SLIDE 15 — Phase t1 ====== -->
 
 <section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;right:-260px;top:-360px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Step 6 · Maintenance</div>
-        <h2 class="reveal">Some links go down at t = 1</h2>
+        <div class="label reveal">Phase t1</div>
+        <h2 class="reveal">Plan for maintenance scenarios</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">•</span><span>A scheduled maintenance takes a set of links <strong>q(1)</strong> offline.</span></li>
-          <li><span class="n">•</span><span>The graph loses those arcs — $G_1=(V,\ A\setminus q(1))$.</span></li>
-          <li><span class="n">•</span><span>Split coefficients are recomputed on G₁ → <strong>r₁</strong>.</span></li>
-          <li><span class="n">•</span><span>Node numbering is unchanged, so the x indices stay stable across periods.</span></li>
+          <li><span class="n">•</span><span>Over time period t1 some arcs get deactivated.</span></li>
+          <li><span class="n">•</span><span>Traffic needs to be rerouted.</span></li>
+          <li><span class="n">•</span><span>Rerouting has costs and risks.</span></li>
+          <li><span class="n">•</span><span>Balance optimality for time and rerouting.</span></li>
         </ul>
       </div>
       <aside class="notes">
@@ -731,12 +729,12 @@ load = <span class="kw">@expression</span>(model, sum(
 
 
 
-    <!-- ====== SLIDE 16 — Architecture · Step 6 ====== -->
+    <!-- ====== SLIDE 16 — Step 7 · Extended model ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Architecture · Step 6</div>
+        <div class="label reveal">Step 7 · Extended model</div>
         <h2 class="reveal">Extend the modules for t = 1</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
@@ -771,13 +769,13 @@ load = <span class="kw">@expression</span>(model, sum(
 
 
 
-    <!-- ====== SLIDE 17 — Constraint (4) · Budget ====== -->
+    <!-- ====== SLIDE 17 — Step 7 · Budget constraint ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Constraint (4) · Budget</div>
-        <h2 class="reveal">Cap the rerouting</h2>
+        <div class="label reveal">Step 7 · Budget constraint</div>
+        <h2 class="reveal">The budget constraint</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 60px; align-items: center;">
           <div>
@@ -840,13 +838,13 @@ segmentChange = <span class="kw">@variable</span>(model,
 
 
 
-    <!-- ====== SLIDE 19 — Results · Lexicographic objective ====== -->
+    <!-- ====== SLIDE 19 — Step 8 · Results (t = 1) ====== -->
 
 <section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Results · Lexicographic objective</div>
-        <h2 class="reveal">Flattening below the MLU</h2>
+        <div class="label reveal">Step 8 · Results (t = 1)</div>
+        <h2 class="reveal">Sorted arc loads after the descent</h2>
         <div class="rule-short reveal"></div>
         <figure class="reveal">
           <img src="assets/plots/load_profile.svg" alt="sorted load profile" style="max-height:560px;">
@@ -866,76 +864,25 @@ segmentChange = <span class="kw">@variable</span>(model,
       <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;top:-380px;"></span></div>
       <div class="pad">
         <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">The exact model hits a wall</h2>
+        <h2 class="reveal">The exact approach doesn't scale</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">•</span><span>01–03 solve to <strong>proven-optimal MLU</strong> (0.93 / 0.55 / 0.94).</span></li>
-          <li><span class="n">•</span><span>04–05 now reach <strong>feasible</strong> solutions (0.48 / 0.12), but stay at <strong>34% / 22% gap</strong>.</span></li>
-          <li><span class="n">•</span><span>06+ still hit the limit — root cause: <strong>~|D|·|V|²</strong> binaries, up to <strong>22.4M</strong>.</span></li>
+          <li><span class="n">•</span><span>The exact MILP only closes the small instances — 01–03 optimal, 04–05 feasible (34% / 22% gap), 06+ hit the limit.</span></li>
+          <li><span class="n">•</span><span>Root cause: ~|D|·|V|² binaries (up to <strong>22.4M</strong>) — branch-and-bound can't scale.</span></li>
+          <li><span class="n">•</span><span>The parallel overnight runs crashed — t0 finished only <strong>2 of 10</strong>, t1 aborted (core dumped).</span></li>
+          <li><span class="n">•</span><span>Cause: all 10 instances were launched at once with no RAM gating.</span></li>
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> The exact MILP scales a little further than
-        before — 04 and 05 now get feasible points — but still cannot prove optimality beyond 03,
-        and 06+ never finish. The binary count grows with demands times node-pairs squared.
+        <span class="who">Speaker 3 (≈1 min).</span> Two walls: the binary count grows with demands
+        times node-pairs squared, so branch-and-bound can't close the large instances; and the
+        parallel launcher started everything at once with no RAM budget, so the big MILPs OOM'd.
       </aside>
     </section>
 
 
 
     <!-- ====== SLIDE 21 — What went wrong ====== -->
-
-<section class="slide">
-      <div class="geo"></div>
-      <div class="pad">
-        <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">The overnight runs failed</h2>
-        <div class="rule-short reveal"></div>
-        <ul class="list reveal">
-          <li><span class="n">•</span><span><strong>t0</strong>: 10 instances launched at once (~31 HiGHS threads, no RAM gate) → only <strong>2 of 10</strong> finished; 8 failed.</span></li>
-          <li><span class="n">•</span><span><strong>t1</strong>: a solver process <strong>“Aborted (core dumped)”</strong> → the run died after 3 results.</span></li>
-          <li><span class="n">•</span><span>Cause: the parallel launcher dropped RAM budgeting and started everything simultaneously.</span></li>
-        </ul>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span>
-      </aside>
-    </section>
-
-
-
-    <!-- ====== SLIDE 22 — What went wrong ====== -->
-
-<section class="slide">
-      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;top:-300px;"></span></div>
-      <div class="pad">
-        <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">Untrustworthy numbers</h2>
-        <div class="rule-short reveal"></div>
-        <div class="reveal">
-          <table>
-            <thead><tr><th>Result</th><th>Reported</th><th>Actual</th></tr></thead>
-            <tbody>
-              <tr><td>t0 · setA-04</td><td class="bad">MLU 0.69, “optimal”</td><td>MLU 0.48 (from load vector)</td></tr>
-              <tr><td>t1 · setA-02</td><td class="bad">MLU 1.10, gap 100%, “optimal”</td><td>MLU 0.94 (from load vector)</td></tr>
-              <tr><td>t1 · setA-01</td><td class="bad">TIME_LIMIT</td><td>MLU 0.93 — actually proven optimal</td></tr>
-            </tbody>
-          </table>
-          <p class="body reveal" style="max-width:1400px;margin-top:30px;">
-            The <strong>mlu / gap</strong> fields are unreliable after the lexicographic descent: the MLU is a stale
-            level-1 λ and <strong>objective_bound returns 0</strong> once the model is modified. The saved
-            <strong>loadVector</strong> is the ground truth — all our tables read it.
-          </p>
-        </div>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span>
-      </aside>
-    </section>
-
-
-
-    <!-- ====== SLIDE 23 — What went wrong ====== -->
 
 <section class="slide">
       <div class="geo"></div>
@@ -957,7 +904,35 @@ segmentChange = <span class="kw">@variable</span>(model,
 
 
 
-    <!-- ====== SLIDE 24 — Questions? ====== -->
+    <!-- ====== SLIDE 22 — Feedback ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <h2 class="reveal">Feedback</h2>
+        <div class="rule-short reveal"></div>
+        <p class="body reveal" style="max-width:1400px;align-self:flex-start;text-align:left;">
+          setA is too large for a 2-week course.
+        </p>
+        <ul class="list reveal">
+          <li><span class="n">•</span><span>Binaries grow as $n^2$ — $B = |D|\,n\,(n-1)$ → setA-10 has <strong>22 M</strong> binaries in one period.</span></li>
+          <li><span class="n">•</span><span>RAM: setA-10 needs <strong>~45 GB</strong> just to store the model.</span></li>
+          <li><span class="n">•</span><span>Runtime scales ~$B^{1.85}$ (10× size ≈ 70× time): setA-06 <strong>~2 days</strong>, setA-10 <strong>~40 days</strong>.</span></li>
+          <li><span class="n">•</span><span>Only setA-01/02/03 solved to optimality (<strong>4–17 s</strong>); setA-04+ hit the limit.</span></li>
+        </ul>
+        <p class="body reveal" style="max-width:1400px;align-self:flex-start;text-align:left;margin-top:30px;">
+          <strong>Takeaway:</strong> need smaller instances or a reduced formulation (fewer candidate waypoints, since $B \propto n^2\,|D|$).
+        </p>
+      </div>
+      <aside class="notes">
+        <span class="who">All.</span> Professor feedback: the setA instances are too large for the
+        course. Binaries grow quadratically in the node count; only the three smallest solve to optimality.
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 23 — Questions? ====== -->
 
 <section class="slide">
       <div class="geo"><span class="ring" style="width:1200px;height:1200px;left:50%;top:50%;transform:translate(-50%,-50%);"></span></div>
