@@ -41,7 +41,10 @@ using .Result
 
 # Parse the CLI arguments into (instanceName, resultsDir, dataDir, timeLimitSec).
 function parse_args(args)
-    resultsDir   = joinpath(REPO_ROOT, "t0_results")
+    # Default like the notebooks: a fresh t0_results/<yyyymmdd-HHMMSS> run dir
+    # (get_runDir_by_timestamp), so a bare run lands in its own timestamped folder
+    # rather than the flat t0_results/. Wrappers still override this via --output.
+    resultsDir   = get_runDir_by_timestamp(joinpath(REPO_ROOT, "t0_results"))
     dataDir      = joinpath(REPO_ROOT, "data")
     timeLimitSec = 900
     maxLevels    = 8

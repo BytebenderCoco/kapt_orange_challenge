@@ -7,10 +7,10 @@
 # id that defaults to the current local server time (YYYYMMDD-HHMMSS). Logs are
 # discarded.
 #
+# The experiment parameters (time limit, lex-descent depth) are hardcoded below.
+#
 # Env overrides:
 #   RUN_ID      run id (default: local time stamp)
-#   TIME_LIMIT  per-instance solver time limit in seconds (default: 1800)
-#   MAX_LEVELS  lex-descent depth per instance (default: t1_solve_instance.jl's 3)
 #   DATA_DIR    directory holding the -net/-tm/-scenario.json files
 #   JULIA       path to the julia binary (default: `julia` on PATH)
 set -u
@@ -28,8 +28,8 @@ fi
 
 RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
 DATA_DIR="${DATA_DIR:-$REPO_ROOT/data}"
-TIME_LIMIT="${TIME_LIMIT:-1800}"
-MAX_LEVELS="${MAX_LEVELS:-}"
+TIME_LIMIT=3600   # hardcoded: 1 hour per instance
+MAX_LEVELS=3      # hardcoded: lex-descent depth per instance
 RESULTS_DIR="$REPO_ROOT/t1_results/$RUN_ID"
 
 # Per-instance HiGHS threads (hardcoded, not an env knob), tiered by model size:
@@ -56,19 +56,16 @@ if ! "$JULIA" --project="$REPO_ROOT" -e 'using Pkg; Pkg.instantiate()'; then
     exit 1
 fi
 
-echo "runId=$RUN_ID instances=10 (parallel) timeLimit=${TIME_LIMIT}s maxLevels=${MAX_LEVELS:-default}"
+echo "runId=$RUN_ID instances=10 (parallel) timeLimit=${TIME_LIMIT}s maxLevels=${MAX_LEVELS}"
 echo "resultsDir=$RESULTS_DIR"
 
 # Discover instance stems (e.g. "setA-01") from the -net.json files in DATA_DIR.
 solve_one() {
     name="$1"
     threads="$(threads_for "$name")"
-    cmd=("$JULIA" --project="$REPO_ROOT" "$REPO_ROOT/scripts/t1_solve_instance.jl" \
+    "$JULIA" --project="$REPO_ROOT" "$REPO_ROOT/scripts/t1_solve_instance.jl" \
         "$name" --output "$RESULTS_DIR" --data-dir "$DATA_DIR" --time-limit "$TIME_LIMIT" \
-        --threads "$threads")
-    # Only forward --max-levels when set, so an unset MAX_LEVELS keeps the script's default.
-    [ -n "$MAX_LEVELS" ] && cmd+=(--max-levels "$MAX_LEVELS")
-    "${cmd[@]}" >/dev/null 2>&1
+        --max-levels "$MAX_LEVELS" --threads "$threads" >/dev/null 2>&1
 }
 
 # Hardcoded to the first 10 instances (setA-01..10 by sorted glob), all started in
