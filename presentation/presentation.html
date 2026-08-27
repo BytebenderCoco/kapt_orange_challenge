@@ -275,7 +275,12 @@ body.show-notes .notes-panel { display: block; }
   <main class="deck-stage" id="deckStage">
 
     <!-- ================================================== SLIDE 1 — COVER -->
-    <section class="slide">
+
+    <!-- ====== SLIDE 01 — Cover ====== -->
+
+    <!-- ====== SLIDE 01 — T-Adaptive Segment Routing ====== -->
+
+<section class="slide">
       <div class="pad" style="justify-content:flex-start;align-items:flex-start;text-align:left;">
         <img class="othr-logo reveal" src="assets/othr-logo.png" alt="OTH Regensburg">
         <div class="title-block reveal" style="margin-top:200px;">
@@ -296,8 +301,11 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 2 — PROBLEM -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 02 — The challenge ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:900px;height:900px;right:-220px;bottom:-420px;"></span></div>
       <div class="pad">
         <div class="label reveal">The challenge</div>
@@ -321,8 +329,11 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 3 — ARCH: HOW WE APPROACHED IT -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 03 — Architecture ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Architecture</div>
@@ -350,8 +361,11 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== ARCH · STEP 1 — GRAPH -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 04 — Architecture · Step 1 ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Architecture · Step 1</div>
@@ -380,8 +394,11 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== ARCH · STEP 2 — SPLIT COEFFICIENTS -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 05 — Architecture · Step 2 ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Architecture · Step 2</div>
@@ -411,8 +428,11 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== ARCH · STEP 3 — MODEL PARAMETERS -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 06 — Architecture · Step 3 ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Architecture · Step 3</div>
@@ -444,8 +464,11 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== ARCH · STEP 4 — THE MODEL -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 07 — Architecture · Step 4 ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Architecture · Step 4</div>
@@ -479,8 +502,11 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 7 — VARIABLES -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 08 — Model · Decision variables ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Model · Decision variables</div>
@@ -493,17 +519,17 @@ body.show-notes .notes-panel { display: block; }
     x[d in demands, t in periods,
       i in 1:n, j in 1:n; i != j], <span class="kw">Bin</span>)</div>
         </div>
-        <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          The routing scheme is fully determined by these <strong>~|D|·|V|²</strong> binaries — the source of the scalability wall.
-        </p>
       </div>
       <aside class="notes">
         <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 8 — EQ 1 -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 09 — Constraint (1) · Flow conservation ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;right:-260px;top:-360px;"></span></div>
       <div class="pad">
         <div class="label reveal">Constraint (1) · Flow conservation</div>
@@ -519,14 +545,20 @@ body.show-notes .notes-panel { display: block; }
         sum(x[demand,t,i,j] for j in 1:n if i != j) -
         sum(x[demand,t,j,i] for j in 1:n if i != j) == rhs)</div>
         </div>
+        <p class="body reveal" style="max-width:1400px;margin-top:10px;">
+          Guarantees path continuity from source <strong>s</strong> to target <strong>t</strong>.
+        </p>
       </div>
       <aside class="notes">
         <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 9 — EQ 2 -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 10 — Constraint (2) · Segment cap ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Constraint (2) · Segment cap</div>
@@ -541,7 +573,7 @@ body.show-notes .notes-panel { display: block; }
             for i in 1:n, j in 1:n if i != j) &lt;= maxSeg)</div>
         </div>
         <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          Every instance uses <strong>max_segments = 6</strong>.
+          Physical hardware limit on router packet headers.
         </p>
       </div>
       <aside class="notes">
@@ -549,8 +581,11 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 10 — EQ 3 -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 11 — Constraint (3) · Load ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;bottom:-380px;"></span></div>
       <div class="pad">
         <div class="label reveal">Constraint (3) · Load</div>
@@ -566,7 +601,7 @@ load = <span class="kw">@expression</span>(model, sum(
 <span class="kw">@constraint</span>(model, load &lt;= lambda * c)</div>
         </div>
         <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          Unreachable segments are <strong>fixed to 0</strong>, so a disconnected demand can't be routed at zero load.
+          Maps segment routing to real physical cables using ECMP coefficients <strong>r(i,j,a)</strong>.
         </p>
       </div>
       <aside class="notes">
@@ -574,44 +609,28 @@ load = <span class="kw">@expression</span>(model, sum(
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 11 — EQ 4 -->
-    <section class="slide">
-      <div class="geo"></div>
-      <div class="pad">
-        <div class="label reveal">Constraint (4) · Budget</div>
-        <h2 class="reveal">Cap the rerouting</h2>
-        <div class="rule-short reveal"></div>
-        <div class="two-col reveal">
-          <div class="equation-sm">$$\sum_{d}\sum_{i,j}\big|x^{dt}_{ij}-x^{d,t-1}_{ij}\big|\ \le\ \kappa(t)$$</div>
-          <div class="code"><span class="cmt"># segmentChange ≥ |x^t - x^{t-1}|</span>
-segmentChange = <span class="kw">@variable</span>(model,
-    [d in demands, i in 1:n, j in 1:n; i != j],
-    lower_bound = 0)
-<span class="kw">@constraint</span>(model, segmentChange[d,i,j] &gt;= x[d,t,i,j] - x[d,t-1,i,j])
-<span class="kw">@constraint</span>(model, segmentChange[d,i,j] &gt;= x[d,t-1,i,j] - x[d,t,i,j])
-<span class="kw">@constraint</span>(model,
-    sum(segmentChange[demand,i,j]
-        for demand in demands, i in 1:n,
-            j in 1:n if i != j) &lt;= beta)</div>
-        </div>
-        <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          The absolute value is <strong>linearized</strong> with a non-negative auxiliary — no new binaries.
-        </p>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span>
-      </aside>
-    </section>
 
-    <!-- ================================================== SLIDE 12 — EQ 5 -->
-    <section class="slide">
+
+    <!-- ====== SLIDE 12 — Objective (5) · Lexicographic min-max ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:900px;height:900px;right:-260px;top:-400px;"></span></div>
       <div class="pad">
         <div class="label reveal">Objective (5) · Lexicographic min-max</div>
         <h2 class="reveal">Flatten the whole load profile</h2>
         <div class="rule-short reveal"></div>
-        <div class="two-col reveal">
-          <div class="equation-sm">$$\text{lex}\min\ \big\{\lambda'(1),\ \lambda'(2),\ \dots\big\}$$</div>
+        <div class="two-col reveal" style="grid-template-columns: 1.25fr 1fr; gap: 60px; align-items: start;">
+          <div>
+            <p class="body reveal" style="text-align:left;margin:0 0 20px;">
+              <strong>Core Objective (Eq. 5):</strong> minimize the maximum link utilization $\text{MLU} = \lambda_{\max}$.
+            </p>
+            <ul class="list">
+              <li><span class="n">•</span><span><strong>The Problem:</strong> minimizing only $\lambda_{\max}$ leaves other links unoptimized and close to saturation.</span></li>
+              <li><span class="n">•</span><span><strong>Level 1:</strong> solve for the absolute MLU $\lambda^{*}$.</span></li>
+              <li><span class="n">•</span><span><strong>Deeper levels $k \ge 2$:</strong> freeze the previous load and minimize the sum of the $k$ most loaded links $S_k$.</span></li>
+              <li><span class="n">•</span><span><strong>Key detail:</strong> continuous slacks $d(a)$ and threshold $t_k$ ⟹ zero extra binary variables.</span></li>
+            </ul>
+          </div>
           <div class="code"><span class="cmt"># S_k = sum of k largest utilizations (OWA)</span>
 <span class="kw">function</span> add_lexLevel!(model, loads, caps, k)
     tk = <span class="kw">@variable</span>(model)
@@ -622,20 +641,20 @@ segmentChange = <span class="kw">@variable</span>(model,
     <span class="kw">return</span> <span class="kw">@expression</span>(model, k * tk + sum(d[a] for a in arcs))
 <span class="kw">end</span></div>
         </div>
-        <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          Level 1 minimizes the MLU; each deeper level freezes the previous one and minimizes the next-largest load — <strong>binary-free</strong>.
-        </p>
       </div>
       <aside class="notes">
         <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 13 — T0 RESULTS -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 13 — Step 5 · Experiments (t = 0) ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;bottom:-280px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Results · Nominal period t = 0</div>
+        <div class="label reveal">Step 5 · Experiments (t = 0)</div>
         <h2 class="reveal">Optimal on small, feasible on 04–05</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.15fr 1fr; gap: 50px; align-items: center;">
@@ -665,11 +684,14 @@ segmentChange = <span class="kw">@variable</span>(model,
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 14 — WALL -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 14 — Step 5 · Results ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Results · Nominal period</div>
+        <div class="label reveal">Step 5 · Results</div>
         <h2 class="reveal">The TIME_LIMIT wall</h2>
         <div class="rule-short reveal"></div>
         <figure class="reveal">
@@ -684,8 +706,11 @@ segmentChange = <span class="kw">@variable</span>(model,
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 15 — STEP 6 -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 15 — Step 6 · Maintenance ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;right:-260px;top:-360px;"></span></div>
       <div class="pad">
         <div class="label reveal">Step 6 · Maintenance</div>
@@ -704,140 +729,11 @@ segmentChange = <span class="kw">@variable</span>(model,
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 16 — T1 RESULTS -->
-    <section class="slide">
-      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-160px;bottom:-300px;"></span></div>
-      <div class="pad">
-        <div class="label reveal">Results · Maintenance period t = 1</div>
-        <h2 class="reveal">Rerouting under budget</h2>
-        <div class="rule-short reveal"></div>
-        <div class="two-col reveal" style="grid-template-columns: 1.15fr 1fr; gap: 50px; align-items: center;">
-          <figure>
-            <img src="assets/plots/t1_mlu.svg" alt="t1 MLU" style="max-height:540px;">
-            <figcaption>MLU before vs after maintenance, with the reconfiguration budget β(1).</figcaption>
-          </figure>
-          <div>
-            <table class="table-compact" style="width:100%;">
-              <thead><tr><th>Instance</th><th>β(1)</th><th>down</th><th>MLU t0</th><th>MLU t1</th></tr></thead>
-              <tbody>
-                <tr><td>setA-01</td><td>51</td><td>22</td><td>0.93</td><td>0.93</td></tr>
-                <tr><td>setA-02</td><td>63</td><td>59</td><td>0.55</td><td class="bad">0.94</td></tr>
-                <tr><td>setA-03</td><td>53</td><td>52</td><td>0.94</td><td>0.94</td></tr>
-              </tbody>
-            </table>
-            <p class="footnote">setA-01 absorbs the failure for free; setA-02 degrades from 0.55 to 0.94.</p>
-          </div>
-        </div>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1.5 min).</span>
-      </aside>
-    </section>
 
-    <!-- ================================================== SLIDE 17 — LEX FLATTENING -->
-    <section class="slide">
-      <div class="geo"></div>
-      <div class="pad">
-        <div class="label reveal">Results · Lexicographic objective</div>
-        <h2 class="reveal">Flattening below the MLU</h2>
-        <div class="rule-short reveal"></div>
-        <figure class="reveal">
-          <img src="assets/plots/load_profile.svg" alt="sorted load profile" style="max-height:560px;">
-          <figcaption>Sorted arc loads after the descent (setA-01, t = 0) — the top is the MLU.</figcaption>
-        </figure>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 2.</span>
-      </aside>
-    </section>
 
-    <!-- ================================================== SLIDE 18 — ERROR: WALL -->
-    <section class="slide">
-      <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;top:-380px;"></span></div>
-      <div class="pad">
-        <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">The exact model hits a wall</h2>
-        <div class="rule-short reveal"></div>
-        <ul class="list reveal">
-          <li><span class="n">•</span><span>01–03 solve to <strong>proven-optimal MLU</strong> (0.93 / 0.55 / 0.94).</span></li>
-          <li><span class="n">•</span><span>04–05 now reach <strong>feasible</strong> solutions (0.48 / 0.12), but stay at <strong>34% / 22% gap</strong>.</span></li>
-          <li><span class="n">•</span><span>06+ still hit the limit — root cause: <strong>~|D|·|V|²</strong> binaries, up to <strong>22.4M</strong>.</span></li>
-        </ul>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> The exact MILP scales a little further than
-        before — 04 and 05 now get feasible points — but still cannot prove optimality beyond 03,
-        and 06+ never finish. The binary count grows with demands times node-pairs squared.
-      </aside>
-    </section>
+    <!-- ====== SLIDE 16 — Architecture · Step 6 ====== -->
 
-    <!-- ================================================== SLIDE 19 — ERROR: RUNS FAILED -->
-    <section class="slide">
-      <div class="geo"></div>
-      <div class="pad">
-        <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">The overnight runs failed</h2>
-        <div class="rule-short reveal"></div>
-        <ul class="list reveal">
-          <li><span class="n">•</span><span><strong>t0</strong>: 10 instances launched at once (~31 HiGHS threads, no RAM gate) → only <strong>2 of 10</strong> finished; 8 failed.</span></li>
-          <li><span class="n">•</span><span><strong>t1</strong>: a solver process <strong>“Aborted (core dumped)”</strong> → the run died after 3 results.</span></li>
-          <li><span class="n">•</span><span>Cause: the parallel launcher dropped RAM budgeting and started everything simultaneously.</span></li>
-        </ul>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span>
-      </aside>
-    </section>
-
-    <!-- ================================================== SLIDE 20 — ERROR: NUMBERS -->
-    <section class="slide">
-      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;top:-300px;"></span></div>
-      <div class="pad">
-        <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">Untrustworthy numbers</h2>
-        <div class="rule-short reveal"></div>
-        <div class="reveal">
-          <table>
-            <thead><tr><th>Result</th><th>Reported</th><th>Actual</th></tr></thead>
-            <tbody>
-              <tr><td>t0 · setA-04</td><td class="bad">MLU 0.69, “optimal”</td><td>MLU 0.48 (from load vector)</td></tr>
-              <tr><td>t1 · setA-02</td><td class="bad">MLU 1.10, gap 100%, “optimal”</td><td>MLU 0.94 (from load vector)</td></tr>
-              <tr><td>t1 · setA-01</td><td class="bad">TIME_LIMIT</td><td>MLU 0.93 — actually proven optimal</td></tr>
-            </tbody>
-          </table>
-          <p class="body reveal" style="max-width:1400px;margin-top:30px;">
-            The <strong>mlu / gap</strong> fields are unreliable after the lexicographic descent: the MLU is a stale
-            level-1 λ and <strong>objective_bound returns 0</strong> once the model is modified. The saved
-            <strong>loadVector</strong> is the ground truth — all our tables read it.
-          </p>
-        </div>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span>
-      </aside>
-    </section>
-
-    <!-- ================================================== SLIDE 21 — LIMITATIONS -->
-    <section class="slide">
-      <div class="geo"></div>
-      <div class="pad">
-        <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">Limitations as-is</h2>
-        <div class="rule-short reveal"></div>
-        <ul class="list reveal">
-          <li><span class="n">•</span><span><strong>Multigraph detour</strong> — 10 instances flagged “multigraph” were assumed unsolvable, but all 20 are actually simple graphs.</span></li>
-          <li><span class="n">•</span><span><strong>Incomplete t1 sweep</strong> — only setA-01/02/03 ran before the crash.</span></li>
-          <li><span class="n">•</span><span><strong>No feasible points</strong> on the large instances.</span></li>
-          <li><span class="n">•</span><span><strong>Docs drifted</strong> from the code (scheduler names, the “out of scope” claim).</span></li>
-        </ul>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span>
-      </aside>
-    </section>
-
-    <!-- ================================================== ARCH · STEP 6 — EXTENSIONS FOR t1 -->
-    <section class="slide">
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Architecture · Step 6</div>
@@ -873,8 +769,197 @@ segmentChange = <span class="kw">@variable</span>(model,
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 22 — CLOSING -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 17 — Constraint (4) · Budget ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Constraint (4) · Budget</div>
+        <h2 class="reveal">Cap the rerouting</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 60px; align-items: center;">
+          <div>
+            <p class="body reveal" style="text-align:left;margin:0 0 18px;">
+              <strong>Maintenance (t = 1):</strong> links go down ⟹ network needs rerouting.
+            </p>
+            <p class="body reveal" style="text-align:left;margin:0 0 18px;">
+              <strong>Operational cost:</strong> reconfiguring routers costs effort and risks QoS.
+            </p>
+            <div class="equation-sm reveal" style="margin:0 0 8px;text-align:center;">$$\text{dist}(P^0, P^1) \le \kappa(1)$$</div>
+            <p class="body reveal" style="text-align:left;">
+              Limits waypoint changes between t = 0 and t = 1. <strong>Implementation:</strong> $|x^{d,1} - x^{d,0}|$ linearized via <em>segmentChange</em>.
+            </p>
+          </div>
+          <div class="code"><span class="cmt"># segmentChange ≥ |x^t - x^{t-1}|</span>
+segmentChange = <span class="kw">@variable</span>(model,
+    [d in demands, i in 1:n, j in 1:n], lower_bound = 0)
+<span class="kw">@constraint</span>(model, segmentChange[d,i,j] &gt;= x[t] - x[t-1])
+<span class="kw">@constraint</span>(model, segmentChange[d,i,j] &gt;= x[t-1] - x[t])
+<span class="kw">@constraint</span>(model, sum(segmentChange) &lt;= beta)</div>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1 min).</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 18 — Step 8 · Experiments (t = 1) ====== -->
+
+<section class="slide">
+      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-160px;bottom:-300px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">Step 8 · Experiments (t = 1)</div>
+        <h2 class="reveal">Rerouting under budget</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.15fr 1fr; gap: 50px; align-items: center;">
+          <figure>
+            <img src="assets/plots/t1_mlu.svg" alt="t1 MLU" style="max-height:540px;">
+            <figcaption>MLU before vs after maintenance, with the reconfiguration budget β(1).</figcaption>
+          </figure>
+          <div>
+            <table class="table-compact" style="width:100%;">
+              <thead><tr><th>Instance</th><th>β(1)</th><th>down</th><th>MLU t0</th><th>MLU t1</th></tr></thead>
+              <tbody>
+                <tr><td>setA-01</td><td>51</td><td>22</td><td>0.93</td><td>0.93</td></tr>
+                <tr><td>setA-02</td><td>63</td><td>59</td><td>0.55</td><td class="bad">0.94</td></tr>
+                <tr><td>setA-03</td><td>53</td><td>52</td><td>0.94</td><td>0.94</td></tr>
+              </tbody>
+            </table>
+            <p class="footnote">setA-01 absorbs the failure for free; setA-02 degrades from 0.55 to 0.94.</p>
+          </div>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1.5 min).</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 19 — Results · Lexicographic objective ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Results · Lexicographic objective</div>
+        <h2 class="reveal">Flattening below the MLU</h2>
+        <div class="rule-short reveal"></div>
+        <figure class="reveal">
+          <img src="assets/plots/load_profile.svg" alt="sorted load profile" style="max-height:560px;">
+          <figcaption>Sorted arc loads after the descent (setA-01, t = 0) — the top is the MLU.</figcaption>
+        </figure>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 2.</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 20 — What went wrong ====== -->
+
+<section class="slide">
+      <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;top:-380px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">What went wrong</div>
+        <h2 class="reveal">The exact model hits a wall</h2>
+        <div class="rule-short reveal"></div>
+        <ul class="list reveal">
+          <li><span class="n">•</span><span>01–03 solve to <strong>proven-optimal MLU</strong> (0.93 / 0.55 / 0.94).</span></li>
+          <li><span class="n">•</span><span>04–05 now reach <strong>feasible</strong> solutions (0.48 / 0.12), but stay at <strong>34% / 22% gap</strong>.</span></li>
+          <li><span class="n">•</span><span>06+ still hit the limit — root cause: <strong>~|D|·|V|²</strong> binaries, up to <strong>22.4M</strong>.</span></li>
+        </ul>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1 min).</span> The exact MILP scales a little further than
+        before — 04 and 05 now get feasible points — but still cannot prove optimality beyond 03,
+        and 06+ never finish. The binary count grows with demands times node-pairs squared.
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 21 — What went wrong ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">What went wrong</div>
+        <h2 class="reveal">The overnight runs failed</h2>
+        <div class="rule-short reveal"></div>
+        <ul class="list reveal">
+          <li><span class="n">•</span><span><strong>t0</strong>: 10 instances launched at once (~31 HiGHS threads, no RAM gate) → only <strong>2 of 10</strong> finished; 8 failed.</span></li>
+          <li><span class="n">•</span><span><strong>t1</strong>: a solver process <strong>“Aborted (core dumped)”</strong> → the run died after 3 results.</span></li>
+          <li><span class="n">•</span><span>Cause: the parallel launcher dropped RAM budgeting and started everything simultaneously.</span></li>
+        </ul>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1 min).</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 22 — What went wrong ====== -->
+
+<section class="slide">
+      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;top:-300px;"></span></div>
+      <div class="pad">
+        <div class="label reveal">What went wrong</div>
+        <h2 class="reveal">Untrustworthy numbers</h2>
+        <div class="rule-short reveal"></div>
+        <div class="reveal">
+          <table>
+            <thead><tr><th>Result</th><th>Reported</th><th>Actual</th></tr></thead>
+            <tbody>
+              <tr><td>t0 · setA-04</td><td class="bad">MLU 0.69, “optimal”</td><td>MLU 0.48 (from load vector)</td></tr>
+              <tr><td>t1 · setA-02</td><td class="bad">MLU 1.10, gap 100%, “optimal”</td><td>MLU 0.94 (from load vector)</td></tr>
+              <tr><td>t1 · setA-01</td><td class="bad">TIME_LIMIT</td><td>MLU 0.93 — actually proven optimal</td></tr>
+            </tbody>
+          </table>
+          <p class="body reveal" style="max-width:1400px;margin-top:30px;">
+            The <strong>mlu / gap</strong> fields are unreliable after the lexicographic descent: the MLU is a stale
+            level-1 λ and <strong>objective_bound returns 0</strong> once the model is modified. The saved
+            <strong>loadVector</strong> is the ground truth — all our tables read it.
+          </p>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1 min).</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 23 — What went wrong ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">What went wrong</div>
+        <h2 class="reveal">Limitations as-is</h2>
+        <div class="rule-short reveal"></div>
+        <ul class="list reveal">
+          <li><span class="n">•</span><span><strong>Multigraph detour</strong> — 10 instances flagged “multigraph” were assumed unsolvable, but all 20 are actually simple graphs.</span></li>
+          <li><span class="n">•</span><span><strong>Incomplete t1 sweep</strong> — only setA-01/02/03 ran before the crash.</span></li>
+          <li><span class="n">•</span><span><strong>No feasible points</strong> on the large instances.</span></li>
+          <li><span class="n">•</span><span><strong>Docs drifted</strong> from the code (scheduler names, the “out of scope” claim).</span></li>
+        </ul>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1 min).</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 24 — Questions? ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:1200px;height:1200px;left:50%;top:50%;transform:translate(-50%,-50%);"></span></div>
       <div class="pad" style="justify-content:center;align-items:center;text-align:center;">
         <h2 class="reveal" style="font-size:120px;align-self:center;text-align:center;">Questions?</h2>
