@@ -163,6 +163,24 @@ h3 { font-size: 40px; }
 .list li:first-child { border-top: 1px solid var(--line); }
 .list li .n { font-family: var(--font-display); font-size: 30px; color: var(--taupe); min-width: 46px; }
 .list li strong { color: var(--ink); font-weight: 500; }
+.list.lg li { font-size: 32px; }
+
+/* ---------- source tree (illustrated file browser) ---------- */
+.tree { font-family: var(--font-mono); font-size: 30px; color: var(--gray); text-align: left; align-self: start; }
+.tree .tnode { display: flex; align-items: center; gap: 13px; padding: 8px 0; white-space: nowrap; }
+.tree .troot .tname { font-size: 34px; }
+.tree .tchildren { padding-left: 30px; }
+.tree .tconn { color: var(--taupe); flex: none; font-weight: 400; }
+.tree .tname { font-weight: 400; }
+.tree .tfolder .tname { color: var(--accent); font-weight: 700; }
+.tree .tfile .tname { color: var(--gray); }
+.tree .tslash { color: var(--taupe); font-weight: 400; }
+/* CSS-drawn icons — folder (accent) and file (outline), no emoji */
+.tree .ticon { position: relative; width: 30px; height: 23px; flex: none; }
+.tree .tfolder > .ticon::after { content: ""; position: absolute; left: 0; right: 1px; bottom: 1px; top: 6px; background: var(--accent); border-radius: 2px; opacity: .9; }
+.tree .tfolder > .ticon::before { content: ""; position: absolute; left: 0; top: 2px; width: 13px; height: 7px; background: var(--accent); border-radius: 2px 2px 0 0; opacity: .9; }
+.tree .tfile > .ticon::before { content: ""; position: absolute; left: 4px; top: 1px; right: 4px; bottom: 1px; border: 1.5px solid var(--taupe); border-radius: 2px; }
+.tree .tfile > .ticon::after { content: ""; position: absolute; right: 4px; top: 1px; width: 8px; height: 8px; background: var(--bg); border-left: 1.5px solid var(--taupe); border-bottom: 1.5px solid var(--taupe); }
 
 /* ---------- equations ---------- */
 .equation {
@@ -301,7 +319,36 @@ body.show-notes .notes-panel { display: block; }
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 3 — ARCH: NOTEBOOK TO MODULES -->
+    <!-- ================================================== SLIDE 3 — ARCH: HOW WE APPROACHED IT -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Architecture</div>
+        <h2 class="reveal">How we approached it</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>Split into two phases</strong>
+              <span style="display:block;margin-top:12px;padding-left:26px;">Phase t0: steps 1-5</span>
+              <span style="display:block;padding-left:26px;">Phase t1: steps 6-8</span></span></li>
+            <li><span>Shared code lives in <strong>source</strong></span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1 (≈1 min).</span>
+      </aside>
+    </section>
+
+    <!-- ================================================== SLIDE 4 — ARCH: NOTEBOOK TO MODULES -->
     <section class="slide">
       <div class="geo"></div>
       <div class="pad">
