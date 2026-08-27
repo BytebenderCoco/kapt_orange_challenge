@@ -123,20 +123,19 @@ Results land in `t0_results/<runId>/` (one JSON per instance, written as each fi
 * **Budget linearization:** $|x^{d,1}_{ij}-x^{d,0}_{ij}|$ via a non-negative auxiliary `segmentChange`.
 * **Solver config:** HiGHS, `mip_rel_gap = 0.01`; notebooks use 900 s (t0) / 1800 s (t1); headless runs hardcode 1800 s (t0) / 3600 s (t1) with `maxLevels = 3`.
 
-## Benchmark Results (nominal t = 0, run `20260826-080344`)
+## Benchmark Results (nominal t = 0, run `20260827-084848`)
 
 | Instance | V | A | D | Status | MLU | Gap | CPU (s) |
 |----------|---|---|---|--------|-----|-----|---------|
-| setA-01 | 20 | 80 | 40 | OPTIMAL | 0.929 | 0% | 2.5 |
-| setA-02 | 30 | 150 | 45 | OPTIMAL | 0.549 | 0% | 68.5 |
-| setA-03 | 50 | 250 | 20 | OPTIMAL | 0.944 | 0.9% | 12.3 |
-| setA-04 | 50 | 250 | 200 | TIME_LIMIT | — | — | 946 |
-| setA-05 | 100 | 396 | 100 | TIME_LIMIT | 0.171 | 32% | 1129 |
-| setA-07 | 100 | 500 | 800 | TIME_LIMIT | — | — | 1175 |
+| setA-01 | 20 | 80 | 40 | OPTIMAL | 0.929 | 0% | 361 |
+| setA-02 | 30 | 150 | 45 | OPTIMAL | 0.549 | 0% | 71 |
+| setA-03 | 50 | 250 | 20 | OPTIMAL | 0.944 | 0% | 2822 |
+| setA-04 | 50 | 250 | 200 | feasible | 0.480 | 34% | 4032 |
+| setA-05 | 100 | 396 | 100 | feasible | 0.116 | 22% | 3789 |
 
-*(setA-06…15 also hit TIME_LIMIT; most returned no feasible point.)*
+*(MLU for 04/05 is the final `loadVector` top; the `mlu` field still reports the stale level-1 λ — see Failures. setA-06+ still hit `TIME_LIMIT`.)*
 
-**Key finding:** small instances converge to proven optimality (gap ≈ 0%) in seconds; larger ones hit `TIME_LIMIT` because the binary-variable count (~ $|D|\cdot|V|^2$) explodes.
+**Key finding:** 01–03 solve to a proven-optimal MLU; 04–05 now reach feasible solutions but stay at 34% / 22% gap; 06+ still hit the limit because the binary-variable count (~ $|D|\cdot|V|^2$) explodes.
 
 ## Maintenance Results (t = 1, run `t1-overnight`, two-period model)
 
@@ -150,9 +149,9 @@ Results land in `t0_results/<runId>/` (one JSON per instance, written as each fi
 
 ## Failures & Untrustworthy Results
 
-* **The exact MILP does not scale** — from `setA-04` on it hits `TIME_LIMIT` with no feasible point (`~|D|·|V|²` binaries, up to ~22.4M).
+* **The exact MILP only scales to setA-05** — 04/05 reach feasible solutions (34% / 22% gap) but 06+ still hit `TIME_LIMIT` (`~|D|·|V|²` binaries, up to ~22.4M).
 * **The parallel overnight runs failed** — `t0-overnight`: 10 instances launched at once with no RAM gating, only 2/10 finished (8 OOM-killed). `t1-overnight`: a solver process **"Aborted (core dumped)"**, run died after 3 results.
-* **Faulty result fields** — `t1-overnight/02.json` reports `OPTIMAL, gap 100%, MLU 1.098` while its `loadVector` shows the true final MLU is **0.943** (the `mlu` field is a stale level-1 λ; `objective_bound` returns 0 after the lex descent). `t1-overnight/01.json` reports `TIME_LIMIT` although its MLU is proven optimal. The sorted `loadVector` is the ground truth.
+* **Faulty result fields** — `t1-overnight/02.json` reports `OPTIMAL, gap 100%, MLU 1.098` while its `loadVector` shows the true final MLU is **0.943** (the `mlu` field is a stale level-1 λ; `objective_bound` returns 0 after the lex descent). `t1-overnight/01.json` reports `TIME_LIMIT` although its MLU is proven optimal. The same stale-λ artifact shows up in the new t0 run: setA-04/05 report `mlu` 0.692/0.148 while the final `loadVector` top is 0.480/0.116. The sorted `loadVector` is the ground truth.
 * **Docs drift** — README still describes the RAM-aware scheduler and "multigraph out of scope"; both no longer match the code.
 
 ## Scope Decisions & Limitations
