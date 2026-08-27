@@ -161,7 +161,7 @@ h3 { font-size: 40px; }
     text-align: left;
 }
 .list li:first-child { border-top: 1px solid var(--line); }
-.list li .n { font-family: var(--font-display); font-size: 30px; color: var(--taupe); min-width: 46px; }
+.list li .n { font-family: var(--font-body); font-size: 30px; color: var(--accent); min-width: 24px; line-height: 1.2; }
 .list li strong { color: var(--ink); font-weight: 500; }
 
 /* ---------- equations ---------- */
@@ -287,10 +287,10 @@ body.show-notes .notes-panel { display: block; }
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.25fr 1fr; gap: 60px; align-items: center;">
           <ul class="list">
-            <li><span class="n">01</span><span>An IP/MPLS backbone with a <strong>forecast traffic matrix</strong>.</span></li>
-            <li><span class="n">02</span><span><strong>Segment Routing</strong>: packets follow waypoints; between them, shortest-path <strong>ECMP</strong>.</span></li>
-            <li><span class="n">03</span><span>Plan the routing <strong>in advance</strong> — nominal t=0, then a maintenance t=1 with links q(1) down.</span></li>
-            <li><span class="n">04</span><span>Goal: keep the <strong>maximum link utilization</strong> (MLU) as low as possible.</span></li>
+            <li><span class="n">•</span><span>An IP/MPLS backbone with a <strong>forecast traffic matrix</strong>.</span></li>
+            <li><span class="n">•</span><span><strong>Segment Routing</strong>: packets follow waypoints; between them, shortest-path <strong>ECMP</strong>.</span></li>
+            <li><span class="n">•</span><span>Plan the routing <strong>in advance</strong> — nominal t=0, then a maintenance t=1 with links q(1) down.</span></li>
+            <li><span class="n">•</span><span>Goal: keep the <strong>maximum link utilization</strong> (MLU) as low as possible.</span></li>
           </ul>
           <figure>
             <img src="assets/plots/network_scale.svg" alt="instance scale" style="max-height:500px;">
@@ -314,9 +314,9 @@ body.show-notes .notes-panel { display: block; }
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1fr 1.3fr; gap: 70px;">
           <ul class="list">
-            <li><span class="n">01</span><span>Two Pluto notebooks orchestrate the pipeline: <strong>t0_experiments.jl</strong> (steps 1–5) and <strong>t1_experiments.jl</strong> (steps 6–8).</span></li>
-            <li><span class="n">02</span><span>Everything repeated was <strong>pulled out</strong> into <strong>source/</strong> modules.</span></li>
-            <li><span class="n">03</span><span>The notebooks only read the three JSON files and hand them to the modules.</span></li>
+            <li><span class="n">•</span><span>Two Pluto notebooks orchestrate the pipeline: <strong>t0_experiments.jl</strong> (steps 1–5) and <strong>t1_experiments.jl</strong> (steps 6–8).</span></li>
+            <li><span class="n">•</span><span>Everything repeated was <strong>pulled out</strong> into <strong>source/</strong> modules.</span></li>
+            <li><span class="n">•</span><span>The notebooks only read the three JSON files and hand them to the modules.</span></li>
           </ul>
           <div class="code"><span class="cmt"># t0_experiments.jl  (Pluto)</span>
 using .Graph, .SplitCoefficients
@@ -399,9 +399,9 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
         <h2 class="reveal">Build, solve, persist</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">01</span><span><strong>Model.jl</strong> — a fluent builder (<em>set_*! / add_*! → build → solve!</em>) around JuMP + HiGHS.</span></li>
-          <li><span class="n">02</span><span><strong>Result.jl</strong> — one result-document schema, written per instance as it finishes.</span></li>
-          <li><span class="n">03</span><span><strong>scripts/</strong> — the same pipeline headless and parallel: one Julia process per instance, results as JSON.</span></li>
+          <li><span class="n">•</span><span><strong>Model.jl</strong> — a fluent builder (<em>set_*! / add_*! → build → solve!</em>) around JuMP + HiGHS.</span></li>
+          <li><span class="n">•</span><span><strong>Result.jl</strong> — one result-document schema, written per instance as it finishes.</span></li>
+          <li><span class="n">•</span><span><strong>scripts/</strong> — the same pipeline headless and parallel: one Julia process per instance, results as JSON.</span></li>
         </ul>
       </div>
       <aside class="notes">
@@ -632,10 +632,10 @@ segmentChange = <span class="kw">@variable</span>(model,
         <h2 class="reveal">Some links go down at t = 1</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">01</span><span>A scheduled maintenance takes a set of links <strong>q(1)</strong> offline.</span></li>
-          <li><span class="n">02</span><span>The graph loses those arcs — $G_1=(V,\ A\setminus q(1))$.</span></li>
-          <li><span class="n">03</span><span>Split coefficients are recomputed on G₁ → <strong>r₁</strong>.</span></li>
-          <li><span class="n">04</span><span>Node numbering is unchanged, so the x indices stay stable across periods.</span></li>
+          <li><span class="n">•</span><span>A scheduled maintenance takes a set of links <strong>q(1)</strong> offline.</span></li>
+          <li><span class="n">•</span><span>The graph loses those arcs — $G_1=(V,\ A\setminus q(1))$.</span></li>
+          <li><span class="n">•</span><span>Split coefficients are recomputed on G₁ → <strong>r₁</strong>.</span></li>
+          <li><span class="n">•</span><span>Node numbering is unchanged, so the x indices stay stable across periods.</span></li>
         </ul>
       </div>
       <aside class="notes">
@@ -703,9 +703,9 @@ segmentChange = <span class="kw">@variable</span>(model,
         <h2 class="reveal">The exact model hits a wall</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">01</span><span>Small instances solve optimally in <strong>2.5 / 68 / 12 s</strong>.</span></li>
-          <li><span class="n">02</span><span>From <strong>setA-04</strong> (50 nodes, 200 demands) the solver hits the limit with <strong>no feasible point</strong>.</span></li>
-          <li><span class="n">03</span><span>Root cause: <strong>~|D|·|V|²</strong> binaries — up to <strong>22.4M</strong> for setA-10.</span></li>
+          <li><span class="n">•</span><span>Small instances solve optimally in <strong>2.5 / 68 / 12 s</strong>.</span></li>
+          <li><span class="n">•</span><span>From <strong>setA-04</strong> (50 nodes, 200 demands) the solver hits the limit with <strong>no feasible point</strong>.</span></li>
+          <li><span class="n">•</span><span>Root cause: <strong>~|D|·|V|²</strong> binaries — up to <strong>22.4M</strong> for setA-10.</span></li>
         </ul>
       </div>
       <aside class="notes">
@@ -723,9 +723,9 @@ segmentChange = <span class="kw">@variable</span>(model,
         <h2 class="reveal">The overnight runs failed</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">01</span><span><strong>t0</strong>: 10 instances launched at once (~31 HiGHS threads, no RAM gate) → only <strong>2 of 10</strong> finished; 8 failed.</span></li>
-          <li><span class="n">02</span><span><strong>t1</strong>: a solver process <strong>“Aborted (core dumped)”</strong> → the run died after 3 results.</span></li>
-          <li><span class="n">03</span><span>Cause: the parallel launcher dropped RAM budgeting and started everything simultaneously.</span></li>
+          <li><span class="n">•</span><span><strong>t0</strong>: 10 instances launched at once (~31 HiGHS threads, no RAM gate) → only <strong>2 of 10</strong> finished; 8 failed.</span></li>
+          <li><span class="n">•</span><span><strong>t1</strong>: a solver process <strong>“Aborted (core dumped)”</strong> → the run died after 3 results.</span></li>
+          <li><span class="n">•</span><span>Cause: the parallel launcher dropped RAM budgeting and started everything simultaneously.</span></li>
         </ul>
       </div>
       <aside class="notes">
@@ -772,10 +772,10 @@ segmentChange = <span class="kw">@variable</span>(model,
         <h2 class="reveal">Limitations as-is</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">01</span><span><strong>Multigraph detour</strong> — 10 instances flagged “multigraph” were assumed unsolvable, but all 20 are actually simple graphs.</span></li>
-          <li><span class="n">02</span><span><strong>Incomplete t1 sweep</strong> — only setA-01/02/03 ran before the crash.</span></li>
-          <li><span class="n">03</span><span><strong>No feasible points</strong> on the large instances.</span></li>
-          <li><span class="n">04</span><span><strong>Docs drifted</strong> from the code (scheduler names, the “out of scope” claim).</span></li>
+          <li><span class="n">•</span><span><strong>Multigraph detour</strong> — 10 instances flagged “multigraph” were assumed unsolvable, but all 20 are actually simple graphs.</span></li>
+          <li><span class="n">•</span><span><strong>Incomplete t1 sweep</strong> — only setA-01/02/03 ran before the crash.</span></li>
+          <li><span class="n">•</span><span><strong>No feasible points</strong> on the large instances.</span></li>
+          <li><span class="n">•</span><span><strong>Docs drifted</strong> from the code (scheduler names, the “out of scope” claim).</span></li>
         </ul>
       </div>
       <aside class="notes">
