@@ -163,6 +163,26 @@ h3 { font-size: 40px; }
 .list li:first-child { border-top: 1px solid var(--line); }
 .list li .n { font-family: var(--font-body); font-size: 30px; color: var(--accent); min-width: 24px; line-height: 1.2; }
 .list li strong { color: var(--ink); font-weight: 500; }
+.list.lg li { font-size: 32px; }
+
+/* ---------- source tree (illustrated file browser) ---------- */
+.tree { font-family: var(--font-mono); font-size: 30px; color: var(--gray); text-align: left; align-self: start; }
+.tree .tnode { display: flex; align-items: center; gap: 13px; padding: 8px 0; white-space: nowrap; }
+.tree .troot .tname { font-size: 34px; }
+.tree .tchildren { padding-left: 30px; }
+.tree .tconn { color: var(--taupe); flex: none; font-weight: 400; }
+.tree .tname { font-weight: 400; }
+.tree .tfolder .tname { color: var(--accent); font-weight: 700; }
+.tree .tfile .tname { color: var(--gray); }
+.tree .tslash { color: var(--taupe); font-weight: 400; }
+/* CSS-drawn icons — folder (accent) and file (outline), no emoji */
+.tree .ticon { position: relative; width: 30px; height: 23px; flex: none; }
+.tree .tfolder > .ticon::after { content: ""; position: absolute; left: 0; right: 1px; bottom: 1px; top: 6px; background: var(--accent); border-radius: 2px; opacity: .9; }
+.tree .tfolder > .ticon::before { content: ""; position: absolute; left: 0; top: 2px; width: 13px; height: 7px; background: var(--accent); border-radius: 2px 2px 0 0; opacity: .9; }
+.tree .tfile > .ticon::before { content: ""; position: absolute; left: 4px; top: 1px; right: 4px; bottom: 1px; border: 1.5px solid var(--taupe); border-radius: 2px; }
+.tree .tfile > .ticon::after { content: ""; position: absolute; right: 4px; top: 1px; width: 8px; height: 8px; background: var(--bg); border-left: 1.5px solid var(--taupe); border-bottom: 1.5px solid var(--taupe); }
+/* module introduced on this step — draws the eye to what's new */
+.tree .tactive .tname { color: var(--ink); font-weight: 700; }
 
 /* ---------- equations ---------- */
 .equation {
@@ -255,14 +275,17 @@ body.show-notes .notes-panel { display: block; }
   <main class="deck-stage" id="deckStage">
 
     <!-- ================================================== SLIDE 1 — COVER -->
-    <section class="slide">
+
+    <!-- ====== SLIDE 01 — Cover ====== -->
+
+<section class="slide">
       <div class="pad" style="justify-content:flex-start;align-items:flex-start;text-align:left;">
         <img class="othr-logo reveal" src="assets/othr-logo.png" alt="OTH Regensburg">
         <div class="title-block reveal" style="margin-top:200px;">
           <div class="identbar"></div>
           <div class="ttitle">
-            <h1>T-Adaptive Segment Routing</h1>
-            <p class="subtitle">Minimizing maximum link utilization under maintenance scenarios.</p>
+            <p class="reveal" style="font-family:var(--font-display);font-size:52px;font-weight:400;color:var(--ink);line-height:1.15;text-align:left;">Our solution to the</p>
+            <h1 style="margin-top:6px;">T-ASR Problem</h1>
           </div>
         </div>
         <div class="title-meta reveal" style="margin-top:90px;">
@@ -272,25 +295,26 @@ body.show-notes .notes-panel { display: block; }
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1 (≈1 min).</span> Orange Research "Keep the Flow!" at EURO/ROADEF 2026.
-        We solve T-Adaptive Segment Routing: choose waypoints so the most-loaded link (the MLU)
-        stays as low as possible, both in normal operation (t=0) and while a link is down (t=1).
+        <span class="who">Speaker 1 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 2 — PROBLEM -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 02 — The challenge ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:900px;height:900px;right:-220px;bottom:-420px;"></span></div>
       <div class="pad">
         <div class="label reveal">The challenge</div>
-        <h2 class="reveal">Keep the flow, even when a link goes down</h2>
+        <h2 class="reveal">Optimize a changing network,<br>on a budget</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.25fr 1fr; gap: 60px; align-items: center;">
           <ul class="list">
-            <li><span class="n">•</span><span>An IP/MPLS backbone with a <strong>forecast traffic matrix</strong>.</span></li>
-            <li><span class="n">•</span><span><strong>Segment Routing</strong>: packets follow waypoints; between them, shortest-path <strong>ECMP</strong>.</span></li>
-            <li><span class="n">•</span><span>Plan the routing <strong>in advance</strong> — nominal t=0, then a maintenance t=1 with links q(1) down.</span></li>
-            <li><span class="n">•</span><span>Goal: keep the <strong>maximum link utilization</strong> (MLU) as low as possible.</span></li>
+            <li><span class="n">•</span><span>Optimize traffic over a telecom network.</span></li>
+            <li><span class="n">•</span><span>Traffic is controlled by the routers.</span></li>
+            <li><span class="n">•</span><span>Our option to intervene: waypoints the traffic has to pass.</span></li>
+            <li><span class="n">•</span><span>Goal: optimal load distribution.</span></li>
           </ul>
           <figure>
             <img src="assets/plots/network_scale.svg" alt="instance scale" style="max-height:500px;">
@@ -299,123 +323,191 @@ body.show-notes .notes-panel { display: block; }
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1 (≈1 min).</span> The network is planned ahead over two periods.
-        Between waypoints, ECMP splits flow evenly across equal-cost shortest paths. The metric
-        we care about is the busiest link — the MLU.
+        <span class="who">Speaker 1 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 3 — ARCH: NOTEBOOK TO MODULES -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 03 — Architecture ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">Architecture</div>
-        <h2 class="reveal">From notebook cells to modules</h2>
+        <h2 class="reveal">Two notebooks, shared modules</h2>
         <div class="rule-short reveal"></div>
-        <div class="two-col reveal" style="grid-template-columns: 1fr 1.3fr; gap: 70px;">
-          <ul class="list">
-            <li><span class="n">•</span><span>Two Pluto notebooks orchestrate the pipeline: <strong>t0_experiments.jl</strong> (steps 1–5) and <strong>t1_experiments.jl</strong> (steps 6–8).</span></li>
-            <li><span class="n">•</span><span>Everything repeated was <strong>pulled out</strong> into <strong>source/</strong> modules.</span></li>
-            <li><span class="n">•</span><span>The notebooks only read the three JSON files and hand them to the modules.</span></li>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>Split into two phases</strong>
+              <span style="display:block;margin-top:12px;padding-left:26px;">Phase t0: steps 1-5</span>
+              <span style="display:block;padding-left:26px;">Phase t1: steps 6-8</span></span></li>
+            <li><span>Shared code lives in <strong>source</strong></span></li>
           </ul>
-          <div class="code"><span class="cmt"># t0_experiments.jl  (Pluto)</span>
-using .Graph, .SplitCoefficients
-using .TrafficMatrix, .Scenario
-using .Model, .Result
-
-<span class="cmt"># per-instance glue</span>
-graph   = <span class="kw">get_graph_from_instance</span>(dataDir, name)
-r       = <span class="kw">get_splitCoefficients_by_graph</span>(graph)
-demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph)</div>
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1 (≈1 min).</span> We started with one big notebook and extracted
-        the reusable logic into source/ modules. The notebooks are now thin: read JSON, call the
-        module, tabulate results.
+        <span class="who">Speaker 1 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 4 — ARCH: LAYOUT -->
-    <section class="slide">
-      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-160px;top:-300px;"></span></div>
-      <div class="pad">
-        <div class="label reveal">Architecture</div>
-        <h2 class="reveal">Repository layout</h2>
-        <div class="rule-short reveal"></div>
-        <div class="code reveal" style="font-size:26px;line-height:1.7;">gp_orange_challenge/
-├─ t0_experiments.jl       <span class="cmt">steps 1–5 (period 0)</span>
-├─ t1_experiments.jl       <span class="cmt">steps 6–8 (period 1)</span>
-├─ source/                 <span class="cmt">one module per concern</span>
-│   ├─ Graph.jl            <span class="cmt">-net.json → graph</span>
-│   ├─ SplitCoefficients.jl <span class="cmt">ECMP r coefficients</span>
-│   ├─ TrafficMatrix.jl     <span class="cmt">-tm.json → demands</span>
-│   ├─ Scenario.jl          <span class="cmt">-scenario.json → maxSeg, q, β</span>
-│   ├─ Model.jl             <span class="cmt">MILP builder + solve!</span>
-│   └─ Result.jl            <span class="cmt">result-document schema</span>
-├─ scripts/                <span class="cmt">headless parallel runner</span>
-├─ data/                   <span class="cmt">20 setA instances</span>
-└─ t0_results/ · t1_results/</div>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 1.</span> The layout mirrors the three JSON inputs and the two
-        notebooks. source/ is the data layer plus the model; scripts/ runs the same pipeline
-        headless and in parallel on a server.
-      </aside>
-    </section>
 
-    <!-- ================================================== SLIDE 5 — ARCH: DATA LAYER -->
-    <section class="slide">
+
+    <!-- ====== SLIDE 04 — Step 1 · Architecture ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Architecture · Data layer</div>
-        <h2 class="reveal">One module per input file</h2>
+        <div class="label reveal">Step 1 · Architecture</div>
+        <h2 class="reveal">Build the graph G₀</h2>
         <div class="rule-short reveal"></div>
-        <div class="reveal">
-          <table>
-            <thead><tr><th>Module</th><th>Consumes</th><th>Produces</th></tr></thead>
-            <tbody>
-              <tr><td>Graph.jl</td><td>-net.json</td><td>NetworkGraph, capacities, down-link removal</td></tr>
-              <tr><td>SplitCoefficients.jl</td><td>graph</td><td>ECMP split coefficients r(i,j,a)</td></tr>
-              <tr><td>TrafficMatrix.jl</td><td>-tm.json</td><td>demands (id, source, target, volumes)</td></tr>
-              <tr><td>Scenario.jl</td><td>-scenario.json</td><td>maxSeg, downtime links q(t), budget β(t)</td></tr>
-            </tbody>
-          </table>
-          <p class="footnote">Each parser validates its JSON first — <em>is_*_valid</em> — and errors on malformed input.</p>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>Graph module</strong> reads the net JSON into the graph G.</span></li>
+            <li><span>Built on the given reference implementation.</span></li>
+          </ul>
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1 (≈1.5 min).</span> The data layer is split by input file, not by
-        project step. Graph validates and rejects duplicate/parallel edges; SplitCoefficients runs
-        a counting Dijkstra for distances and path counts.
+        <span class="who">Speaker 1.</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 6 — ARCH: LOGIC LAYER -->
-    <section class="slide">
-      <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;bottom:-380px;"></span></div>
-      <div class="pad">
-        <div class="label reveal">Architecture · Logic & orchestration</div>
-        <h2 class="reveal">Build, solve, persist</h2>
-        <div class="rule-short reveal"></div>
-        <ul class="list reveal">
-          <li><span class="n">•</span><span><strong>Model.jl</strong> — a fluent builder (<em>set_*! / add_*! → build → solve!</em>) around JuMP + HiGHS.</span></li>
-          <li><span class="n">•</span><span><strong>Result.jl</strong> — one result-document schema, written per instance as it finishes.</span></li>
-          <li><span class="n">•</span><span><strong>scripts/</strong> — the same pipeline headless and parallel: one Julia process per instance, results as JSON.</span></li>
-        </ul>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 1.</span> The model layer is a builder mirroring JuMP's own style;
-        solve! runs the lexicographic descent. scripts/ reuses the exact same modules, so notebook
-        and server runs emit the same result schema.
-      </aside>
-    </section>
 
-    <!-- ================================================== SLIDE 7 — VARIABLES -->
-    <section class="slide">
+
+    <!-- ====== SLIDE 05 — Step 2 · Architecture ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Model · Decision variables</div>
+        <div class="label reveal">Step 2 · Architecture</div>
+        <h2 class="reveal">Compute the split coefficients r</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">SplitCoefficients.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>SplitCoefficients module</strong> returns the split coefficients r as a dict.</span></li>
+            <li><span>r covers the shortest paths only.</span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 06 — Step 3 · Architecture ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Step 3 · Architecture</div>
+        <h2 class="reveal">Derive the model parameters</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">SplitCoefficients.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">TrafficMatrix.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">Scenario.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>TrafficMatrix module</strong> parses the demand volumes from the tm JSON.</span></li>
+            <li><span><strong>Scenario module</strong> parses maxSeg from the scenario JSON.</span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 07 — Step 4 · Architecture ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Step 4 · Architecture</div>
+        <h2 class="reveal">Implement the model for t = 0</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">SplitCoefficients.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">TrafficMatrix.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Scenario.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">Model.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>Model module</strong> builds and solves the MILP.</span></li>
+            <li><span>Builder pattern, reused by both notebooks.</span></li>
+            <li><span>One builder function per constraint.</span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 08 — Step 4 · Decision variables ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Step 4 · Decision variables</div>
         <h2 class="reveal">One binary per segment</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal">
@@ -425,21 +517,20 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
     x[d in demands, t in periods,
       i in 1:n, j in 1:n; i != j], <span class="kw">Bin</span>)</div>
         </div>
-        <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          The routing scheme is fully determined by these <strong>~|D|·|V|²</strong> binaries — the source of the scalability wall.
-        </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1 min).</span> x says whether demand d uses segment (i,j) at period t.
-        The count grows with demands times node-pairs squared — for setA-10 that is ~22M binaries.
+        <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 8 — EQ 1 -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 09 — Step 4 · Constraint (1) · Flow conservation ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;right:-260px;top:-360px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Constraint (1) · Flow conservation</div>
+        <div class="label reveal">Step 4 · Constraint (1) · Flow conservation</div>
         <h2 class="reveal">One path per demand</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal">
@@ -452,18 +543,23 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
         sum(x[demand,t,i,j] for j in 1:n if i != j) -
         sum(x[demand,t,j,i] for j in 1:n if i != j) == rhs)</div>
         </div>
+        <p class="body reveal" style="max-width:1400px;margin-top:10px;">
+          Guarantees path continuity from source <strong>s</strong> to target <strong>t</strong>.
+        </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1 min).</span> Flow conservation forces exactly one source→target
-        segment chain per demand, per period. RHS is +1 at the source, −1 at the target, 0 elsewhere.
+        <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 9 — EQ 2 -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 10 — Step 4 · Constraint (2) · Segment cap ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Constraint (2) · Segment cap</div>
+        <div class="label reveal">Step 4 · Constraint (2) · Segment cap</div>
         <h2 class="reveal">At most maxSeg segments</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal">
@@ -475,20 +571,22 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
             for i in 1:n, j in 1:n if i != j) &lt;= maxSeg)</div>
         </div>
         <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          Every instance uses <strong>max_segments = 6</strong>.
+          Physical hardware limit on router packet headers.
         </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2.</span> The cap bounds the number of segments a path may use —
-        a physical router limit. All setA scenarios set it to 6.
+        <span class="who">Speaker 2.</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 10 — EQ 3 -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 11 — Step 4 · Constraint (3) · Load ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;bottom:-380px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Constraint (3) · Load</div>
+        <div class="label reveal">Step 4 · Constraint (3) · Load</div>
         <h2 class="reveal">Routed flow ≤ capacity × MLU</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal">
@@ -501,56 +599,36 @@ load = <span class="kw">@expression</span>(model, sum(
 <span class="kw">@constraint</span>(model, load &lt;= lambda * c)</div>
         </div>
         <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          Unreachable segments are <strong>fixed to 0</strong>, so a disconnected demand can't be routed at zero load.
+          Maps segment routing to real physical cables using ECMP coefficients <strong>r(i,j,a)</strong>.
         </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1 min).</span> The load ties each arc's ECMP traffic to λ. The r
-        coefficients come from SplitCoefficients; φ(d,t) is the volume. Segments with no r entry
-        (endpoints disconnected in G_t) are fixed to zero.
+        <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 11 — EQ 4 -->
-    <section class="slide">
-      <div class="geo"></div>
-      <div class="pad">
-        <div class="label reveal">Constraint (4) · Budget</div>
-        <h2 class="reveal">Cap the rerouting</h2>
-        <div class="rule-short reveal"></div>
-        <div class="two-col reveal">
-          <div class="equation-sm">$$\sum_{d}\sum_{i,j}\big|x^{dt}_{ij}-x^{d,t-1}_{ij}\big|\ \le\ \kappa(t)$$</div>
-          <div class="code"><span class="cmt"># segmentChange ≥ |x^t - x^{t-1}|</span>
-segmentChange = <span class="kw">@variable</span>(model,
-    [d in demands, i in 1:n, j in 1:n; i != j],
-    lower_bound = 0)
-<span class="kw">@constraint</span>(model, segmentChange[d,i,j] &gt;= x[d,t,i,j] - x[d,t-1,i,j])
-<span class="kw">@constraint</span>(model, segmentChange[d,i,j] &gt;= x[d,t-1,i,j] - x[d,t,i,j])
-<span class="kw">@constraint</span>(model,
-    sum(segmentChange[demand,i,j]
-        for demand in demands, i in 1:n,
-            j in 1:n if i != j) &lt;= beta)</div>
-        </div>
-        <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          The absolute value is <strong>linearized</strong> with a non-negative auxiliary — no new binaries.
-        </p>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> Rerouting costs operations effort, so the challenge
-        caps the number of segment changes between periods. We linearize |·| with an auxiliary that
-        appears only in the ≤ β constraint.
-      </aside>
-    </section>
 
-    <!-- ================================================== SLIDE 12 — EQ 5 -->
-    <section class="slide">
+
+    <!-- ====== SLIDE 12 — Step 4 · Objective (5) · Lexicographic min-max ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:900px;height:900px;right:-260px;top:-400px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Objective (5) · Lexicographic min-max</div>
-        <h2 class="reveal">Flatten the whole load profile</h2>
+        <div class="label reveal">Step 4 · Objective (5) · Lexicographic min-max</div>
+        <h2 class="reveal">Minimize the MLU, then flatten the loads</h2>
         <div class="rule-short reveal"></div>
-        <div class="two-col reveal">
-          <div class="equation-sm">$$\text{lex}\min\ \big\{\lambda'(1),\ \lambda'(2),\ \dots\big\}$$</div>
+        <div class="two-col reveal" style="grid-template-columns: 1.25fr 1fr; gap: 60px; align-items: start;">
+          <div>
+            <p class="body reveal" style="text-align:left;margin:0 0 20px;">
+              <strong>Core Objective (Eq. 5):</strong> minimize the maximum link utilization $\text{MLU} = \lambda_{\max}$.
+            </p>
+            <ul class="list">
+              <li><span class="n">•</span><span><strong>The Problem:</strong> minimizing only $\lambda_{\max}$ leaves other links unoptimized and close to saturation.</span></li>
+              <li><span class="n">•</span><span><strong>Level 1:</strong> solve for the absolute MLU $\lambda^{*}$.</span></li>
+              <li><span class="n">•</span><span><strong>Deeper levels $k \ge 2$:</strong> freeze the previous load and minimize the sum of the $k$ most loaded links $S_k$.</span></li>
+              <li><span class="n">•</span><span><strong>Key detail:</strong> continuous slacks $d(a)$ and threshold $t_k$ ⟹ zero extra binary variables.</span></li>
+            </ul>
+          </div>
           <div class="code"><span class="cmt"># S_k = sum of k largest utilizations (OWA)</span>
 <span class="kw">function</span> add_lexLevel!(model, loads, caps, k)
     tk = <span class="kw">@variable</span>(model)
@@ -561,22 +639,20 @@ segmentChange = <span class="kw">@variable</span>(model,
     <span class="kw">return</span> <span class="kw">@expression</span>(model, k * tk + sum(d[a] for a in arcs))
 <span class="kw">end</span></div>
         </div>
-        <p class="body reveal" style="max-width:1400px;margin-top:10px;">
-          Level 1 minimizes the MLU; each deeper level freezes the previous one and minimizes the next-largest load — <strong>binary-free</strong>.
-        </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1 min).</span> The subject asks for a lexicographic min-max of
-        the sorted loads. We descend level by level: freeze λ (the MLU), then minimize S_k = sum of
-        the k largest utilizations via an OWA gadget with a threshold and slacks — no extra binaries.
+        <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 13 — T0 RESULTS -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 13 — Step 5 · Experiments (t = 0) ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;bottom:-280px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Results · Nominal period t = 0</div>
+        <div class="label reveal">Step 5 · Experiments (t = 0)</div>
         <h2 class="reveal">Optimal on small, feasible on 04–05</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.15fr 1fr; gap: 50px; align-items: center;">
@@ -606,11 +682,14 @@ segmentChange = <span class="kw">@variable</span>(model,
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 14 — WALL -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 14 — Step 5 · Results ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Results · Nominal period</div>
+        <div class="label reveal">Step 5 · Results</div>
         <h2 class="reveal">The TIME_LIMIT wall</h2>
         <div class="rule-short reveal"></div>
         <figure class="reveal">
@@ -625,18 +704,21 @@ segmentChange = <span class="kw">@variable</span>(model,
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 15 — STEP 6 -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 15 — Phase t1 ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;right:-260px;top:-360px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Step 6 · Maintenance</div>
-        <h2 class="reveal">Some links go down at t = 1</h2>
+        <div class="label reveal">Phase t1</div>
+        <h2 class="reveal">Plan for maintenance scenarios</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">•</span><span>A scheduled maintenance takes a set of links <strong>q(1)</strong> offline.</span></li>
-          <li><span class="n">•</span><span>The graph loses those arcs — $G_1=(V,\ A\setminus q(1))$.</span></li>
-          <li><span class="n">•</span><span>Split coefficients are recomputed on G₁ → <strong>r₁</strong>.</span></li>
-          <li><span class="n">•</span><span>Node numbering is unchanged, so the x indices stay stable across periods.</span></li>
+          <li><span class="n">•</span><span>Over time period t1 some arcs get deactivated.</span></li>
+          <li><span class="n">•</span><span>Traffic needs to be rerouted.</span></li>
+          <li><span class="n">•</span><span>Rerouting has costs and risks.</span></li>
+          <li><span class="n">•</span><span>Balance optimality for time and rerouting.</span></li>
         </ul>
       </div>
       <aside class="notes">
@@ -645,11 +727,90 @@ segmentChange = <span class="kw">@variable</span>(model,
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 16 — T1 RESULTS -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 16 — Step 7 · Extended model ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Step 7 · Extended model</div>
+        <h2 class="reveal">Extend the modules for t = 1</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile tactive"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">SplitCoefficients.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">TrafficMatrix.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Scenario.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">Model.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>Scenario module</strong> gains two functions
+              <span style="display:block;margin-top:12px;padding-left:26px;">Parse the downtime links q(1)</span>
+              <span style="display:block;padding-left:26px;">Parse the reconfiguration budget</span></span></li>
+            <li><span><strong>Graph module</strong> gains one function
+              <span style="display:block;margin-top:12px;padding-left:26px;">Build the degraded graph G₁</span></span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3.</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 17 — Step 7 · Budget constraint ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Step 7 · Budget constraint</div>
+        <h2 class="reveal">The budget constraint</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 60px; align-items: center;">
+          <div>
+            <p class="body reveal" style="text-align:left;margin:0 0 18px;">
+              <strong>Maintenance (t = 1):</strong> links go down ⟹ network needs rerouting.
+            </p>
+            <p class="body reveal" style="text-align:left;margin:0 0 18px;">
+              <strong>Operational cost:</strong> reconfiguring routers costs effort and risks QoS.
+            </p>
+            <div class="equation-sm reveal" style="margin:0 0 8px;text-align:center;">$$\text{dist}(P^0, P^1) \le \kappa(1)$$</div>
+            <p class="body reveal" style="text-align:left;">
+              Limits waypoint changes between t = 0 and t = 1. <strong>Implementation:</strong> $|x^{d,1} - x^{d,0}|$ linearized via <em>segmentChange</em>.
+            </p>
+          </div>
+          <div class="code"><span class="cmt"># segmentChange ≥ |x^t - x^{t-1}|</span>
+segmentChange = <span class="kw">@variable</span>(model,
+    [d in demands, i in 1:n, j in 1:n], lower_bound = 0)
+<span class="kw">@constraint</span>(model, segmentChange[d,i,j] &gt;= x[t] - x[t-1])
+<span class="kw">@constraint</span>(model, segmentChange[d,i,j] &gt;= x[t-1] - x[t])
+<span class="kw">@constraint</span>(model, sum(segmentChange) &lt;= beta)</div>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3 (≈1 min).</span>
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 18 — Step 8 · Experiments (t = 1) ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:700px;height:700px;right:-160px;bottom:-300px;"></span></div>
       <div class="pad">
-        <div class="label reveal">Results · Maintenance period t = 1</div>
+        <div class="label reveal">Step 8 · Experiments (t = 1)</div>
         <h2 class="reveal">Rerouting under budget</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.15fr 1fr; gap: 50px; align-items: center;">
@@ -671,18 +832,19 @@ segmentChange = <span class="kw">@variable</span>(model,
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1.5 min).</span> The two-period model minimizes the MLU over both
-        periods jointly. In setA-01 the budget is enough to reroute around link 22 at no MLU cost; in
-        setA-02 the single failure forces the MLU from 0.55 up to 0.94.
+        <span class="who">Speaker 3 (≈1.5 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 17 — LEX FLATTENING -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 19 — Step 8 · Results (t = 1) ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
-        <div class="label reveal">Results · Lexicographic objective</div>
-        <h2 class="reveal">Flattening below the MLU</h2>
+        <div class="label reveal">Step 8 · Results (t = 1)</div>
+        <h2 class="reveal">Sorted arc loads after the descent</h2>
         <div class="rule-short reveal"></div>
         <figure class="reveal">
           <img src="assets/plots/load_profile.svg" alt="sorted load profile" style="max-height:560px;">
@@ -690,84 +852,39 @@ segmentChange = <span class="kw">@variable</span>(model,
         </figure>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2.</span> After the MLU is frozen, the descent pushes down the
-        second-, third-, … most-loaded links. This curve is the sorted load vector the subject's
-        objective (5) lexicographically minimizes.
+        <span class="who">Speaker 2.</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 18 — ERROR: WALL -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 20 — What went wrong ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:800px;height:800px;left:-300px;top:-380px;"></span></div>
       <div class="pad">
         <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">The exact model hits a wall</h2>
+        <h2 class="reveal">The exact approach doesn't scale</h2>
         <div class="rule-short reveal"></div>
         <ul class="list reveal">
-          <li><span class="n">•</span><span>01–03 solve to <strong>proven-optimal MLU</strong> (0.93 / 0.55 / 0.94).</span></li>
-          <li><span class="n">•</span><span>04–05 now reach <strong>feasible</strong> solutions (0.48 / 0.12), but stay at <strong>34% / 22% gap</strong>.</span></li>
-          <li><span class="n">•</span><span>06+ still hit the limit — root cause: <strong>~|D|·|V|²</strong> binaries, up to <strong>22.4M</strong>.</span></li>
+          <li><span class="n">•</span><span>The exact MILP only closes the small instances — 01–03 optimal, 04–05 feasible (34% / 22% gap), 06+ hit the limit.</span></li>
+          <li><span class="n">•</span><span>Root cause: ~|D|·|V|² binaries (up to <strong>22.4M</strong>) — branch-and-bound can't scale.</span></li>
+          <li><span class="n">•</span><span>The parallel overnight runs crashed — t0 finished only <strong>2 of 10</strong>, t1 aborted (core dumped).</span></li>
+          <li><span class="n">•</span><span>Cause: all 10 instances were launched at once with no RAM gating.</span></li>
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> The exact MILP scales a little further than
-        before — 04 and 05 now get feasible points — but still cannot prove optimality beyond 03,
-        and 06+ never finish. The binary count grows with demands times node-pairs squared.
+        <span class="who">Speaker 3 (≈1 min).</span> Two walls: the binary count grows with demands
+        times node-pairs squared, so branch-and-bound can't close the large instances; and the
+        parallel launcher started everything at once with no RAM budget, so the big MILPs OOM'd.
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 19 — ERROR: RUNS FAILED -->
-    <section class="slide">
-      <div class="geo"></div>
-      <div class="pad">
-        <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">The overnight runs failed</h2>
-        <div class="rule-short reveal"></div>
-        <ul class="list reveal">
-          <li><span class="n">•</span><span><strong>t0</strong>: 10 instances launched at once (~31 HiGHS threads, no RAM gate) → only <strong>2 of 10</strong> finished; 8 failed.</span></li>
-          <li><span class="n">•</span><span><strong>t1</strong>: a solver process <strong>“Aborted (core dumped)”</strong> → the run died after 3 results.</span></li>
-          <li><span class="n">•</span><span>Cause: the parallel launcher dropped RAM budgeting and started everything simultaneously.</span></li>
-        </ul>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> The headless scheduler launches all instances at
-        once with no memory admission control. The big MILPs (5M–22M binaries) exceed the machine's
-        RAM, so the OS kills them — 8 of 10 failed on t0, and t1 aborted after three results.
-      </aside>
-    </section>
 
-    <!-- ================================================== SLIDE 20 — ERROR: NUMBERS -->
-    <section class="slide">
-      <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;top:-300px;"></span></div>
-      <div class="pad">
-        <div class="label reveal">What went wrong</div>
-        <h2 class="reveal">Untrustworthy numbers</h2>
-        <div class="rule-short reveal"></div>
-        <div class="reveal">
-          <table>
-            <thead><tr><th>Result</th><th>Reported</th><th>Actual</th></tr></thead>
-            <tbody>
-              <tr><td>t0 · setA-04</td><td class="bad">MLU 0.69, “optimal”</td><td>MLU 0.48 (from load vector)</td></tr>
-              <tr><td>t1 · setA-02</td><td class="bad">MLU 1.10, gap 100%, “optimal”</td><td>MLU 0.94 (from load vector)</td></tr>
-              <tr><td>t1 · setA-01</td><td class="bad">TIME_LIMIT</td><td>MLU 0.93 — actually proven optimal</td></tr>
-            </tbody>
-          </table>
-          <p class="body reveal" style="max-width:1400px;margin-top:30px;">
-            The <strong>mlu / gap</strong> fields are unreliable after the lexicographic descent: the MLU is a stale
-            level-1 λ and <strong>objective_bound returns 0</strong> once the model is modified. The saved
-            <strong>loadVector</strong> is the ground truth — all our tables read it.
-          </p>
-        </div>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> Two reporting bugs, not wrong solutions: the mlu
-        field keeps a non-optimal level-1 λ (1.098 vs the real 0.943), and objective_bound returns 0
-        after the descent, producing gap 100%. The sorted loadVector gives the true MLU.
-      </aside>
-    </section>
 
-    <!-- ================================================== SLIDE 21 — LIMITATIONS -->
-    <section class="slide">
+    <!-- ====== SLIDE 21 — What went wrong ====== -->
+
+<section class="slide">
       <div class="geo"></div>
       <div class="pad">
         <div class="label reveal">What went wrong</div>
@@ -781,21 +898,49 @@ segmentChange = <span class="kw">@variable</span>(model,
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> State the limits honestly: the multigraph
-        assumption was wrong, the t1 sweep is partial, and the docs no longer match the code. No
-        roadmap — just the current status.
+        <span class="who">Speaker 3 (≈1 min).</span>
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 22 — CLOSING -->
-    <section class="slide">
+
+
+    <!-- ====== SLIDE 22 — Feedback ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <h2 class="reveal">Feedback</h2>
+        <div class="rule-short reveal"></div>
+        <p class="body reveal" style="max-width:1400px;align-self:flex-start;text-align:left;">
+          setA is too large for a 2-week course.
+        </p>
+        <ul class="list reveal">
+          <li><span class="n">•</span><span>Binaries grow as $n^2$ — $B = |D|\,n\,(n-1)$ → setA-10 has <strong>22 M</strong> binaries in one period.</span></li>
+          <li><span class="n">•</span><span>RAM: setA-10 needs <strong>~45 GB</strong> just to store the model.</span></li>
+          <li><span class="n">•</span><span>Runtime scales ~$B^{1.85}$ (10× size ≈ 70× time): setA-06 <strong>~2 days</strong>, setA-10 <strong>~40 days</strong>.</span></li>
+          <li><span class="n">•</span><span>Only setA-01/02/03 solved to optimality (<strong>4–17 s</strong>); setA-04+ hit the limit.</span></li>
+        </ul>
+        <p class="body reveal" style="max-width:1400px;align-self:flex-start;text-align:left;margin-top:30px;">
+          <strong>Takeaway:</strong> need smaller instances or a reduced formulation (fewer candidate waypoints, since $B \propto n^2\,|D|$).
+        </p>
+      </div>
+      <aside class="notes">
+        <span class="who">All.</span> Professor feedback: the setA instances are too large for the
+        course. Binaries grow quadratically in the node count; only the three smallest solve to optimality.
+      </aside>
+    </section>
+
+
+
+    <!-- ====== SLIDE 23 — Questions? ====== -->
+
+<section class="slide">
       <div class="geo"><span class="ring" style="width:1200px;height:1200px;left:50%;top:50%;transform:translate(-50%,-50%);"></span></div>
       <div class="pad" style="justify-content:center;align-items:center;text-align:center;">
         <h2 class="reveal" style="font-size:120px;align-self:center;text-align:center;">Questions?</h2>
       </div>
       <aside class="notes">
-        <span class="who">All (≈1 min).</span> Wrap up: clean modular architecture, an exact model
-        with the lexicographic objective, and a clear-eyed account of the failures. Open Q&amp;A.
+        <span class="who">All (≈1 min).</span>
       </aside>
     </section>
 
