@@ -1,0 +1,8 @@
+==> instantiating project environment...
+runId=20260827-100148 instances=5 (parallel) timeLimit=3600s maxLevels=3
+resultsDir=/data/home/zej44128/kapt_orange_challenge/t1_results/20260827-100148
+start setA-04 (threads 4)
+start setA-05 (threads 4)
+start setA-06 (threads 4)
+start setA-07 (threads 4)
+start setA-08 (threads 4)
