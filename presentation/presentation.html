@@ -181,6 +181,8 @@ h3 { font-size: 40px; }
 .tree .tfolder > .ticon::before { content: ""; position: absolute; left: 0; top: 2px; width: 13px; height: 7px; background: var(--accent); border-radius: 2px 2px 0 0; opacity: .9; }
 .tree .tfile > .ticon::before { content: ""; position: absolute; left: 4px; top: 1px; right: 4px; bottom: 1px; border: 1.5px solid var(--taupe); border-radius: 2px; }
 .tree .tfile > .ticon::after { content: ""; position: absolute; right: 4px; top: 1px; width: 8px; height: 8px; background: var(--bg); border-left: 1.5px solid var(--taupe); border-bottom: 1.5px solid var(--taupe); }
+/* module introduced on this step — draws the eye to what's new */
+.tree .tactive .tname { color: var(--ink); font-weight: 700; }
 
 /* ---------- equations ---------- */
 .equation {
@@ -345,6 +347,135 @@ body.show-notes .notes-panel { display: block; }
       </div>
       <aside class="notes">
         <span class="who">Speaker 1 (≈1 min).</span>
+      </aside>
+    </section>
+
+    <!-- ================================================== ARCH · STEP 1 — GRAPH -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Architecture · Step 1</div>
+        <h2 class="reveal">Build the graph G₀</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>Graph module</strong> reads the net JSON into the graph G.</span></li>
+            <li><span>Built on the given reference implementation.</span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span>
+      </aside>
+    </section>
+
+    <!-- ================================================== ARCH · STEP 2 — SPLIT COEFFICIENTS -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Architecture · Step 2</div>
+        <h2 class="reveal">Compute the split coefficients r</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">SplitCoefficients.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>SplitCoefficients module</strong> returns the split coefficients r as a dict.</span></li>
+            <li><span>r covers the shortest paths only.</span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span>
+      </aside>
+    </section>
+
+    <!-- ================================================== ARCH · STEP 3 — MODEL PARAMETERS -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Architecture · Step 3</div>
+        <h2 class="reveal">Derive the model parameters</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">SplitCoefficients.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">TrafficMatrix.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">Scenario.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>TrafficMatrix module</strong> parses the demand volumes from the tm JSON.</span></li>
+            <li><span><strong>Scenario module</strong> parses maxSeg from the scenario JSON.</span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span>
+      </aside>
+    </section>
+
+    <!-- ================================================== ARCH · STEP 4 — THE MODEL -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Architecture · Step 4</div>
+        <h2 class="reveal">Implement the period-0 model</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">SplitCoefficients.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">TrafficMatrix.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Scenario.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">Model.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>Model module</strong> builds and solves the MILP.</span></li>
+            <li><span>Builder pattern, reused by both notebooks.</span></li>
+            <li><span>One builder function per constraint.</span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 1.</span>
       </aside>
     </section>
 
@@ -549,25 +680,6 @@ segmentChange = <span class="kw">@variable</span>(model,
       </aside>
     </section>
 
-    <!-- ================================================== SLIDE 15 — STEP 6 -->
-    <section class="slide">
-      <div class="geo"><span class="ring" style="width:800px;height:800px;right:-260px;top:-360px;"></span></div>
-      <div class="pad">
-        <div class="label reveal">Step 6 · Maintenance</div>
-        <h2 class="reveal">Some links go down at t = 1</h2>
-        <div class="rule-short reveal"></div>
-        <ul class="list reveal">
-          <li><span class="n">01</span><span>A scheduled maintenance takes a set of links <strong>q(1)</strong> offline.</span></li>
-          <li><span class="n">02</span><span>The graph loses those arcs — $G_1=(V,\ A\setminus q(1))$.</span></li>
-          <li><span class="n">03</span><span>Split coefficients are recomputed on G₁ → <strong>r₁</strong>.</span></li>
-          <li><span class="n">04</span><span>Node numbering is unchanged, so the x indices stay stable across periods.</span></li>
-        </ul>
-      </div>
-      <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span>
-      </aside>
-    </section>
-
     <!-- ================================================== SLIDE 16 — T1 RESULTS -->
     <section class="slide">
       <div class="geo"><span class="ring" style="width:700px;height:700px;right:-160px;bottom:-300px;"></span></div>
@@ -694,6 +806,43 @@ segmentChange = <span class="kw">@variable</span>(model,
       </div>
       <aside class="notes">
         <span class="who">Speaker 3 (≈1 min).</span>
+      </aside>
+    </section>
+
+    <!-- ================================================== ARCH · STEP 6 — EXTENSIONS FOR t1 -->
+    <section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Architecture · Step 6</div>
+        <h2 class="reveal">Extend the modules for t = 1</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1.05fr 1fr; gap: 70px;">
+          <div class="tree">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile tactive"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Graph.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">SplitCoefficients.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">TrafficMatrix.jl</span></div>
+                <div class="tnode tfile tactive"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">Scenario.jl</span></div>
+                <div class="tnode tfile"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">Model.jl</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="list lg">
+            <li><span><strong>Scenario module</strong> gains two functions
+              <span style="display:block;margin-top:12px;padding-left:26px;">Parse the downtime links q(1)</span>
+              <span style="display:block;padding-left:26px;">Parse the reconfiguration budget</span></span></li>
+            <li><span><strong>Graph module</strong> gains one function
+              <span style="display:block;margin-top:12px;padding-left:26px;">Build the degraded graph G₁</span></span></li>
+          </ul>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 3.</span>
       </aside>
     </section>
 
