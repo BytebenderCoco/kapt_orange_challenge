@@ -272,9 +272,7 @@ body.show-notes .notes-panel { display: block; }
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1 (≈1 min).</span> Orange Research "Keep the Flow!" at EURO/ROADEF 2026.
-        We solve T-Adaptive Segment Routing: choose waypoints so the most-loaded link (the MLU)
-        stays as low as possible, both in normal operation (t=0) and while a link is down (t=1).
+        <span class="who">Speaker 1 (≈1 min).</span>
       </aside>
     </section>
 
@@ -299,9 +297,7 @@ body.show-notes .notes-panel { display: block; }
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1 (≈1 min).</span> The network is planned ahead over two periods.
-        Between waypoints, ECMP splits flow evenly across equal-cost shortest paths. The metric
-        we care about is the busiest link — the MLU.
+        <span class="who">Speaker 1 (≈1 min).</span>
       </aside>
     </section>
 
@@ -330,9 +326,7 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1 (≈1 min).</span> We started with one big notebook and extracted
-        the reusable logic into source/ modules. The notebooks are now thin: read JSON, call the
-        module, tabulate results.
+        <span class="who">Speaker 1 (≈1 min).</span>
       </aside>
     </section>
 
@@ -358,9 +352,7 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
 └─ t0_results/ · t1_results/</div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1.</span> The layout mirrors the three JSON inputs and the two
-        notebooks. source/ is the data layer plus the model; scripts/ runs the same pipeline
-        headless and in parallel on a server.
+        <span class="who">Speaker 1.</span>
       </aside>
     </section>
 
@@ -385,9 +377,7 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1 (≈1.5 min).</span> The data layer is split by input file, not by
-        project step. Graph validates and rejects duplicate/parallel edges; SplitCoefficients runs
-        a counting Dijkstra for distances and path counts.
+        <span class="who">Speaker 1 (≈1.5 min).</span>
       </aside>
     </section>
 
@@ -405,9 +395,7 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 1.</span> The model layer is a builder mirroring JuMP's own style;
-        solve! runs the lexicographic descent. scripts/ reuses the exact same modules, so notebook
-        and server runs emit the same result schema.
+        <span class="who">Speaker 1.</span>
       </aside>
     </section>
 
@@ -430,8 +418,7 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
         </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1 min).</span> x says whether demand d uses segment (i,j) at period t.
-        The count grows with demands times node-pairs squared — for setA-10 that is ~22M binaries.
+        <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
@@ -454,8 +441,7 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1 min).</span> Flow conservation forces exactly one source→target
-        segment chain per demand, per period. RHS is +1 at the source, −1 at the target, 0 elsewhere.
+        <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
@@ -479,8 +465,7 @@ demands = <span class="kw">get_demands_from_instance</span>(dataDir, name, graph
         </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2.</span> The cap bounds the number of segments a path may use —
-        a physical router limit. All setA scenarios set it to 6.
+        <span class="who">Speaker 2.</span>
       </aside>
     </section>
 
@@ -505,9 +490,7 @@ load = <span class="kw">@expression</span>(model, sum(
         </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1 min).</span> The load ties each arc's ECMP traffic to λ. The r
-        coefficients come from SplitCoefficients; φ(d,t) is the volume. Segments with no r entry
-        (endpoints disconnected in G_t) are fixed to zero.
+        <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
@@ -536,9 +519,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> Rerouting costs operations effort, so the challenge
-        caps the number of segment changes between periods. We linearize |·| with an auxiliary that
-        appears only in the ≤ β constraint.
+        <span class="who">Speaker 3 (≈1 min).</span>
       </aside>
     </section>
 
@@ -566,9 +547,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </p>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1 min).</span> The subject asks for a lexicographic min-max of
-        the sorted loads. We descend level by level: freeze λ (the MLU), then minimize S_k = sum of
-        the k largest utilizations via an OWA gadget with a threshold and slacks — no extra binaries.
+        <span class="who">Speaker 2 (≈1 min).</span>
       </aside>
     </section>
 
@@ -600,9 +579,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2 (≈1.5 min).</span> The three small instances solve to proven
-        optimality in seconds. From setA-04 (200 demands) onward we hit the 900 s limit; most return
-        no feasible point. See the chart for the full sweep.
+        <span class="who">Speaker 2 (≈1.5 min).</span>
       </aside>
     </section>
 
@@ -619,8 +596,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </figure>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2.</span> On a log scale the wall is obvious: as demand counts grow
-        the solve jumps straight to the 900 s limit.
+        <span class="who">Speaker 2.</span>
       </aside>
     </section>
 
@@ -639,8 +615,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> At t=1 maintenance takes links down; we delete those
-        arcs and recompute the split coefficients on G₁. Same nodes, same indices.
+        <span class="who">Speaker 3 (≈1 min).</span>
       </aside>
     </section>
 
@@ -670,9 +645,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1.5 min).</span> The two-period model minimizes the MLU over both
-        periods jointly. In setA-01 the budget is enough to reroute around link 22 at no MLU cost; in
-        setA-02 the single failure forces the MLU from 0.55 up to 0.94.
+        <span class="who">Speaker 3 (≈1.5 min).</span>
       </aside>
     </section>
 
@@ -689,9 +662,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </figure>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 2.</span> After the MLU is frozen, the descent pushes down the
-        second-, third-, … most-loaded links. This curve is the sorted load vector the subject's
-        objective (5) lexicographically minimizes.
+        <span class="who">Speaker 2.</span>
       </aside>
     </section>
 
@@ -709,9 +680,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> The exact MILP does not scale. The binary count
-        explodes with demands times node-pairs squared, so branch-and-bound cannot even find a first
-        feasible point on the larger instances within the limit.
+        <span class="who">Speaker 3 (≈1 min).</span>
       </aside>
     </section>
 
@@ -729,9 +698,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> The headless scheduler launches all instances at
-        once with no memory admission control. The big MILPs (5M–22M binaries) exceed the machine's
-        RAM, so the OS kills them — 8 of 10 failed on t0, and t1 aborted after three results.
+        <span class="who">Speaker 3 (≈1 min).</span>
       </aside>
     </section>
 
@@ -758,9 +725,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </div>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> Two reporting bugs, not wrong solutions: the mlu
-        field keeps a non-optimal level-1 λ (1.098 vs the real 0.943), and objective_bound returns 0
-        after the descent, producing gap 100%. The sorted loadVector gives the true MLU.
+        <span class="who">Speaker 3 (≈1 min).</span>
       </aside>
     </section>
 
@@ -779,9 +744,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         </ul>
       </div>
       <aside class="notes">
-        <span class="who">Speaker 3 (≈1 min).</span> State the limits honestly: the multigraph
-        assumption was wrong, the t1 sweep is partial, and the docs no longer match the code. No
-        roadmap — just the current status.
+        <span class="who">Speaker 3 (≈1 min).</span>
       </aside>
     </section>
 
@@ -792,8 +755,7 @@ segmentChange = <span class="kw">@variable</span>(model,
         <h2 class="reveal" style="font-size:120px;align-self:center;text-align:center;">Questions?</h2>
       </div>
       <aside class="notes">
-        <span class="who">All (≈1 min).</span> Wrap up: clean modular architecture, an exact model
-        with the lexicographic objective, and a clear-eyed account of the failures. Open Q&amp;A.
+        <span class="who">All (≈1 min).</span>
       </aside>
     </section>
 
