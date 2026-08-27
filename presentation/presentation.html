@@ -706,6 +706,43 @@ load = <span class="kw">@expression</span>(model, sum(
 
 
 
+    <!-- ====== SLIDE 14b — Step 5 · Improvements · Step up ====== -->
+
+<section class="slide">
+      <div class="geo"></div>
+      <div class="pad">
+        <div class="label reveal">Step 5 · Improvements</div>
+        <h2 class="reveal">Bigger problems, bigger computer</h2>
+        <div class="rule-short reveal"></div>
+        <div class="two-col reveal" style="grid-template-columns: 1fr 1.05fr; gap: 70px;">
+          <ul class="list lg">
+            <li><span>Problems are too big for our Laptops (setA-10 ~45GB RAM)</span></li>
+            <li><span><strong>OTH server</strong> — 128 cores, 1.5 TB of RAM.</span></li>
+            <li><span>Scripts to run solves in parallel</span></li>
+          </ul>
+          <div class="tree" style="margin-left: 114px;">
+            <div class="tnode tfolder troot"><span class="ticon"></span><span class="tname">project<span class="tslash">/</span></span></div>
+            <div class="tchildren">
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t0_experiments.jl</span></div>
+              <div class="tnode tfile"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">t1_experiments.jl</span></div>
+              <div class="tnode tfolder"><span class="tconn">├─</span><span class="ticon"></span><span class="tname">source<span class="tslash">/</span></span></div>
+              <div class="tnode tfolder tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">scripts<span class="tslash">/</span></span></div>
+              <div class="tchildren">
+                <div class="tnode tfile tactive"><span class="tconn">└─</span><span class="ticon"></span><span class="tname">t0_execution.jl</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="notes">
+        <span class="who">Speaker 2.</span> setA outgrows a laptop — setA-10 alone needs ~45 GB just
+        to hold the model. We move to the OTH server (128 cores, 1.5 TB RAM) and add a scripts/ folder
+        that drives the instances in parallel.
+      </aside>
+    </section>
+
+
+
     <!-- ====== SLIDE 15 — Phase t1 ====== -->
 
 <section class="slide">
