@@ -1,0 +1,59 @@
+nohup: ignoring input
+==> instantiating project environment...
+runId=t0-overnight instances=10 (parallel) timeLimit=3600s maxLevels=5
+resultsDir=/data/home/zej44128/kapt_orange_challenge/t0_results/t0-overnight
+  setA-01 (threads 1)
+  setA-02 (threads 1)
+  setA-03 (threads 1)
+  setA-04 (threads 1)
+  setA-05 (threads 1)
+  setA-06 (threads 4)
+  setA-07 (threads 6)
+  setA-08 (threads 4)
+  setA-09 (threads 4)
+  setA-10 (threads 8)
+start setA-01
+start setA-02
+start setA-03
+start setA-04
+start setA-05
+start setA-06
+start setA-07
+start setA-08
+start setA-09
+start setA-10
+done setA-02 (1/10)
+done setA-01 (2/10)
+done setA-03 (failed) (3/10)
+┌ Warning: instance failed
+│   done.name = "setA-03"
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:103
+done setA-04 (failed) (4/10)
+┌ Warning: instance failed
+│   done.name = "setA-04"
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:103
+done setA-05 (failed) (5/10)
+┌ Warning: instance failed
+│   done.name = "setA-05"
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:103
+done setA-06 (failed) (6/10)
+┌ Warning: instance failed
+│   done.name = "setA-06"
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:103
+done setA-09 (failed) (7/10)
+┌ Warning: instance failed
+│   done.name = "setA-09"
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:103
+done setA-07 (failed) (8/10)
+┌ Warning: instance failed
+│   done.name = "setA-07"
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:103
+done setA-08 (failed) (9/10)
+┌ Warning: instance failed
+│   done.name = "setA-08"
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:103
+done setA-10 (failed) (10/10)
+┌ Warning: instance failed
+│   done.name = "setA-10"
+└ @ Main ~/kapt_orange_challenge/scripts/run_scheduler.jl:103
+done: 2 instance result(s) written to /data/home/zej44128/kapt_orange_challenge/t0_results/t0-overnight
