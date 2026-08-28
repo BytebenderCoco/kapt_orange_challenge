@@ -654,7 +654,7 @@ load = <span class="kw">@expression</span>(model, sum(
       <div class="geo"><span class="ring" style="width:700px;height:700px;right:-140px;bottom:-280px;"></span></div>
       <div class="pad">
         <div class="label reveal">Step 5 · Experiments (t = 0)</div>
-        <h2 class="reveal">Optimal on small, feasible on 04–05</h2>
+        <h2 class="reveal">Optimal on 01-03, feasible on 04–09</h2>
         <div class="rule-short reveal"></div>
         <div class="two-col reveal" style="grid-template-columns: 1.15fr 1fr; gap: 50px; align-items: center;">
           <figure>
@@ -952,17 +952,15 @@ segmentChange = <span class="kw">@variable</span>(model,
       <div class="pad">
         <h2 class="reveal">Feedback</h2>
         <div class="rule-short reveal"></div>
-        <p class="body reveal" style="max-width:1400px;align-self:flex-start;text-align:left;">
-          setA is too large for a 2-week course.
-        </p>
         <ul class="list reveal">
-          <li><span class="n">•</span><span>Binaries grow as $n^2$ — $B = |D|\,n\,(n-1)$ → setA-10 has <strong>22 M</strong> binaries in one period.</span></li>
+          <li><span class="n">•</span><span>We really enjoyed the challenge.</span></li>
+          <li><span class="n">•</span><span>Binaries grow quickly with network size → setA-10 has <strong>22 M</strong> binaries in one period.</span></li>
           <li><span class="n">•</span><span>RAM: setA-10 needs <strong>~45 GB</strong> just to store the model.</span></li>
-          <li><span class="n">•</span><span>Runtime scales ~$B^{1.85}$ (10× size ≈ 70× time): setA-06 <strong>~2 days</strong>, setA-10 <strong>~40 days</strong>.</span></li>
-          <li><span class="n">•</span><span>Only setA-01/02/03 solved to optimality (<strong>4–17 s</strong>); setA-04+ hit the limit.</span></li>
+          <li><span class="n">•</span><span>Runtime scales super-linearly (10× size ≈ 70× time): setA-06 <strong>~2 days</strong>, setA-10 <strong>~40 days</strong>.</span></li>
+          <li><span class="n">•</span><span>Remove the misguiding multigraph flags. All 20 setA instances are actually simple graphs.</span></li>
         </ul>
         <p class="body reveal" style="max-width:1400px;align-self:flex-start;text-align:left;margin-top:30px;">
-          <strong>Takeaway:</strong> need smaller instances or a reduced formulation (fewer candidate waypoints, since $B \propto n^2\,|D|$).
+          <strong>Takeaway:</strong> need smaller instances or a reduced formulation (fewer candidate waypoints).
         </p>
       </div>
       <aside class="notes">
