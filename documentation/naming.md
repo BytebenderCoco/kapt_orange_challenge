@@ -199,26 +199,7 @@ Symbols currently in use:
 ### Tier 2 — everything else → descriptive `camelCase`
 
 Containers, intermediate structures, and plumbing the spec doesn't symbolize get
-a readable name in `camelCase` (matching the function-WHAT casing).
-
-| Name            | What it is |
-| --------------- | ---------- |
-| `graph`         | the graph |
-| `network`       | the `NetworkGraph` |
-| `metricMatrix`  | the ω-weight matrix Dijkstra consumes |
-| `capacities`    | the `c(a)` capacity map (arc → capacity), keyed like `edgeData` |
-| `demands`       | the traffic-matrix demands (`(id, source, target, volumes)` each) |
-| `edge`          | current edge |
-| `dijkstraState` | Dijkstra result object |
-| `dataDir`       | directory holding the setA instance JSON files |
-| `instanceName`  | an instance's filename stem, e.g. `"setA-01"` |
-| `results`       | the Step 5 table: a vector of `experimentRow`s |
-| `timeLimitSec`  | the solver wall-clock cap in seconds (900 for t0, 1800 for t1) |
-
-A container holding a spec quantity is Tier 2, not Tier 1: `capacities` maps arcs
-to `c(a)` but is named descriptively, exactly as `metricMatrix` holds `ω` values
-without being called `omega`. The symbol goes in a comment; the container gets a
-readable name.
+a readable name in `camelCase` (matching the function-WHAT casing). A container holding a spec quantity is Tier 2, not Tier 1: `capacities` maps arcs to `c(a)` but is named descriptively, exactly as `metricMatrix` holds `ω` values without being called `omega`. The symbol goes in a comment; the container gets a readable name.
 
 ## Types, modules, and fields
 
